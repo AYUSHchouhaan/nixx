@@ -1,159 +1,192 @@
-# Turborepo starter
+# Nixx
 
-This Turborepo starter is maintained by the Turborepo core team.
+A Turborepo monorepo with a Next.js web app, PostgreSQL database layer, and GitHub authentication (OAuth login + GitHub App installation tokens).
 
-## Using this example
+## Tech Stack
 
-Run the following command:
+- **Monorepo:** Turborepo
+- **Package manager / runtime:** Bun
+- **Web:** Next.js 16 (App Router, Turbopack), React 19
+- **Auth:** Better Auth
+- **Database:** PostgreSQL + Drizzle ORM
+- **UI:** `@repo/ui` shared React components
+- **Language:** TypeScript
 
-```sh
-npx create-turbo@latest
+## Project Structure
+
+```
+nixx/
+├── apps/
+│   ├── web/                 # Next.js application
+│   └── agent-brain/         # Empty placeholder app
+├── packages/
+│   ├── db/                  # Drizzle schema, client, migrations
+│   ├── ui/                  # Shared React components
+│   ├── eslint-config/       # Shared ESLint config
+│   └── typescript-config/   # Shared TypeScript configs
+├── turbo.json
+└── package.json
 ```
 
-## What's inside?
+## Getting Started
 
-This Turborepo includes the following packages/apps:
+### 1. Install dependencies
 
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+```powershell
+bun install
 ```
 
-Without global `turbo`, use your package manager:
+### 2. Configure environment variables
 
-```sh
-cd my-turborepo
-npx turbo build
-bun dlx turbo build
-bun exec turbo build
+There are two env files to configure:
+
+#### `packages/db/.env`
+
+```env
+DATABASE_URL=postgresql://...
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+#### `apps/web/.env`
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+```env
+DATABASE_URL=postgresql://...
+BETTER_AUTH_SECRET=your-secret
+BETTER_AUTH_URL=http://localhost:3000
 
-```sh
-turbo build --filter=docs
+# GitHub OAuth App (for user login)
+GITHUB_CLIENT_ID=your-oauth-client-id
+GITHUB_CLIENT_SECRET=your-oauth-client-secret
+
+# GitHub App (for installation tokens)
+GITHUB_APP_ID=your-app-id
+GITHUB_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
 ```
 
-Without global `turbo`:
+> **Private key format:** paste the PEM on one line, replacing real line breaks with `\n`. Keep the BEGIN/END markers.
 
-```sh
-npx turbo build --filter=docs
-bun exec turbo build --filter=docs
-bun exec turbo build --filter=docs
+### 3. Apply database migrations
+
+```powershell
+bun run db:migrate --filter=@repo/db
 ```
 
-### Develop
+### 4. Start the dev server
 
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
+```powershell
+bun run dev
 ```
 
-Without global `turbo`, use your package manager:
+Open [http://localhost:3000](http://localhost:3000).
 
-```sh
-cd my-turborepo
-npx turbo dev
-bun exec turbo dev
-bun exec turbo dev
+To run only the web app:
+
+```powershell
+bun run dev --filter=web
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+## GitHub Setup
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+The project uses **two different GitHub integrations**:
 
-```sh
-turbo dev --filter=web
+### GitHub OAuth App (user login)
+
+Used by Better Auth to let users sign in with GitHub.
+
+1. GitHub → **Settings** → **Developer settings** → **OAuth Apps** → **New OAuth App**
+2. Homepage URL: `http://localhost:3000`
+3. Authorization callback URL: `http://localhost:3000/api/auth/callback/github`
+4. Copy the **Client ID** and generate a **Client Secret** into `apps/web/.env`.
+
+### GitHub App (installation tokens)
+
+Used to generate short-lived installation access tokens programmatically.
+
+1. GitHub → **Settings** → **Developer settings** → **GitHub Apps** → **New GitHub App**
+2. Set required permissions (e.g. repository contents read)
+3. Generate a **private key** and copy the **App ID**
+4. Install the app on your account/org
+
+> The **installation ID is not hardcoded** — it is resolved dynamically after login by calling `GET /user/installations` with the user's OAuth access token.
+
+## Authentication Flow
+
+1. User clicks **Sign in with GitHub** on `/login`.
+2. Better Auth redirects to GitHub and back to `/api/auth/callback/github`.
+3. Better Auth stores the user in `users` and the OAuth account (including the access token) in `accounts`.
+4. The user is redirected to `/`, which shows their name and email when authenticated.
+
+Only the Better Auth **session token** is stored in a cookie. The GitHub OAuth access token lives in the database (`accounts.access_token`), not in cookies.
+
+## Installation Token Flow
+
+`GET /api/github/installation-token` (requires authentication):
+
+1. Reads the logged-in user's session.
+2. Loads their GitHub access token from `accounts`.
+3. Resolves the installation ID via `GET /user/installations`.
+4. Signs a GitHub App JWT using `GITHUB_PRIVATE_KEY`.
+5. Exchanges the installation ID for a short-lived installation token.
+
+Response:
+
+```json
+{
+  "installationId": 12345678,
+  "token": "ghs_...",
+  "expiresAt": "2026-08-14T..."
+}
 ```
 
-Without global `turbo`:
+Core helpers live in `apps/web/app/lib/github-installation.ts`:
 
-```sh
-npx turbo dev --filter=web
-bun exec turbo dev --filter=web
-bun exec turbo dev --filter=web
-```
+- `getInstallationId(userAccessToken)` — resolves the installation ID
+- `createInstallationToken(installationId)` — creates the installation token
 
-### Remote Caching
+## Database
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+All tables are defined in `packages/db/src/schema.ts`:
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+| Table | Purpose |
+|-------|---------|
+| `users` | Better Auth users |
+| `sessions` | Better Auth sessions |
+| `accounts` | OAuth accounts + tokens |
+| `verifications` | Email verification tokens |
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+Better Auth is wired to the **same existing schema** (no separate generated auth schema), using the Drizzle adapter with `usePlural: true`.
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+### Database commands
 
-```sh
-cd my-turborepo
-turbo login
-```
+Run from the repo root (or inside `packages/db`):
 
-Without global `turbo`, use your package manager:
+| Command | Description |
+|---------|-------------|
+| `bun run db:generate --filter=@repo/db` | Generate a migration |
+| `bun run db:migrate --filter=@repo/db` | Apply migrations |
+| `bun run db:push --filter=@repo/db` | Push schema directly |
+| `bun run db:studio --filter=@repo/db` | Open Drizzle Studio |
+| `bun run db:test --filter=@repo/db` | Test DB connectivity |
 
-```sh
-cd my-turborepo
-npx turbo login
-bun exec turbo login
-bun exec turbo login
-```
+> Drizzle migration folders are gitignored; only `schema.ts` and source code are tracked.
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+## Scripts
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+| Command | Description |
+|---------|-------------|
+| `bun run dev` | Start all dev servers |
+| `bun run build` | Build all packages/apps |
+| `bun run lint` | Lint all packages/apps |
+| `bun run check-types` | Typecheck all packages/apps |
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+## Key Files
 
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-bun exec turbo link
-bun exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+| File | Purpose |
+|------|---------|
+| `apps/web/app/lib/auth.ts` | Better Auth config + GitHub provider |
+| `apps/web/app/lib/github-installation.ts` | GitHub App JWT + installation token helpers |
+| `apps/web/app/api/auth/[...all]/route.ts` | Better Auth handler |
+| `apps/web/app/api/github/installation-token/route.ts` | Installation token endpoint |
+| `apps/web/app/login/` | Login page + form |
+| `apps/web/app/page.tsx` | Main page (shows logged-in user info) |
+| `packages/db/src/schema.ts` | Canonical DB schema |
+| `packages/db/src/index.ts` | Drizzle client export |

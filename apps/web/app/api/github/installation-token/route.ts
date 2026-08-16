@@ -13,8 +13,11 @@ export async function GET() {
   }
 
   try {
-    const { token, expiresAt } = await getInstallationToken();
-    return NextResponse.json({ token, expiresAt });
+    const { installationId, token, expiresAt } = await getInstallationToken(
+      session.user.id,
+    );
+
+    return NextResponse.json({ installationId, token, expiresAt });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to get installation token";
