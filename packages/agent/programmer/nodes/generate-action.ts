@@ -1,10 +1,10 @@
 import { HumanMessage, SystemMessage, AIMessage } from '@langchain/core/messages';
-import { createGrepTool, createReadTool, createEditTool, createNewFileTool, createGlobTool, createBashTool, createMarkTaskCompleteTool } from '../../tools';
-import { emitAgent } from '../../ui/events';
+import { createGrepTool, createReadTool, createEditTool, createNewFileTool, createGlobTool, createBashTool, createMarkTaskCompleteTool } from '../tools';
+// import { emitAgent } from '../../ui/events';
 import type { ProgrammerState } from '../types';
 import { createChatModel } from '../model';
 
-const HISTORY_WINDOW = 30;
+const HISTORY_WINDOW = 300;
 
 // ...existing code...
 function buildSystemPrompt(taskDescription: string): string {
@@ -73,22 +73,22 @@ function emitResponseEvent(response: AIMessage): void {
   const content = response.content;
   
   // Emit content if present
-  if (content && typeof content === 'string' && content.trim().length > 0) {
-    emitAgent({
-      type: 'llm_text',
-      text: content,
-    });
-  }
+  // if (content && typeof content === 'string' && content.trim().length > 0) {
+  //   emitAgent({
+  //     type: 'llm_text',
+  //     text: content,
+  //   });
+  // }
   
   // Emit tool calls if present
-  if (toolCalls.length > 0) {
-    const firstCall = toolCalls[0];
-    emitAgent({
-      type: 'tool_call',
-      name: firstCall?.name ?? '',
-      args: (firstCall?.args ?? {}) as Record<string, unknown>,
-    });
-  }
+  // if (toolCalls.length > 0) {
+  //   const firstCall = toolCalls[0];
+  //   emitAgent({
+  //     type: 'tool_call',
+  //     name: firstCall?.name ?? '',
+  //     args: (firstCall?.args ?? {}) as Record<string, unknown>,
+  //   });
+  // }
 }
 
 
@@ -118,10 +118,10 @@ export async function generateActionNode(
   // logMessageHistory removed
 
   const responseMessage = await llm.invoke(inputMessages);
-  if (!(responseMessage instanceof AIMessage)) {
-    emitAgent({ type: 'error', message: 'Model returned non-AI message.' });
-    return { messages: [] };
-  }
+  // if (!(responseMessage instanceof AIMessage)) {
+  //   emitAgent({ type: 'error', message: 'Model returned non-AI message.' });
+  //   return { messages: [] };
+  // }
 
   const newMessages =
     messageHistory.length === 0
