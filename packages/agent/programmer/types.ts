@@ -1,6 +1,5 @@
 import { Annotation } from '@langchain/langgraph';
 import { BaseMessage } from '@langchain/core/messages';
-import type { ProviderRuntimeConfig } from '../config/provider';
 
 export const ProgrammerStateAnnotation = Annotation.Root({
   /** The user's original query */
@@ -8,19 +7,6 @@ export const ProgrammerStateAnnotation = Annotation.Root({
 
   /** Absolute path to the repo on disk */
   repoPath: Annotation<string>,
-
-  /** Active provider/model configuration for this run */
-  providerConfig: Annotation<ProviderRuntimeConfig>({
-    reducer: (_, update) => update,
-    default: () => ({
-      selectedProvider: 'openai',
-      providers: {
-        openai: { apiKey: '', model: 'gpt-5-mini' },
-        anthropic: { apiKey: '', model: 'haiku 4.5' },
-        google: { apiKey: '', model: 'gemini 1.5 flash' },
-      },
-    }),
-  }),
 
   /** Optional execution notes/context to guide implementation */
   notes: Annotation<string>({

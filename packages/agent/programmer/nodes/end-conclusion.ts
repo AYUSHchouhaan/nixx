@@ -1,6 +1,6 @@
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import type { ProgrammerState } from '../types';
-import { createChatModel, getSelectedProviderConfig } from '../../config/provider';
+import { createChatModel } from '../model';
 
 /**
  * Node: end-conclusion
@@ -11,8 +11,7 @@ export async function endConclusionNode(
   state: ProgrammerState
 ): Promise<Partial<ProgrammerState>> {
 
-  const modelConfig = getSelectedProviderConfig(state.providerConfig);
-  const llm = createChatModel(modelConfig);
+  const llm = createChatModel();
 
   const conversationSummary = state.messages
     .slice(-40)

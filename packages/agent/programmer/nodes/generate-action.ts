@@ -2,7 +2,7 @@ import { HumanMessage, SystemMessage, AIMessage } from '@langchain/core/messages
 import { createGrepTool, createReadTool, createEditTool, createNewFileTool, createGlobTool, createBashTool, createMarkTaskCompleteTool } from '../../tools';
 import { emitAgent } from '../../ui/events';
 import type { ProgrammerState } from '../types';
-import { createChatModel, getSelectedProviderConfig } from '../../config/provider';
+import { createChatModel } from '../model';
 
 const HISTORY_WINDOW = 30;
 
@@ -103,8 +103,7 @@ export async function generateActionNode(
   const bashTool = createBashTool(state.repoPath);
   const markTaskCompleteTool = createMarkTaskCompleteTool();
 
-  const modelConfig = getSelectedProviderConfig(state.providerConfig);
-  const llm = createChatModel(modelConfig).bindTools([globTool, grepTool, readTool, editTool, createFileTool, bashTool, markTaskCompleteTool]);
+  const llm = createChatModel().bindTools([globTool, grepTool, readTool, editTool, createFileTool, bashTool, markTaskCompleteTool]);
   
 
   const messageHistory = state.messages;
