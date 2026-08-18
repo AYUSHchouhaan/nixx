@@ -1,13 +1,4 @@
-export interface SandboxCallInput {
-  sandboxId: string;
-  command: string;                 // "read_file" | "write_file" | "edit_file" | "run"
-  args: Record<string, unknown>;
-}
-
-export interface SandboxCallResult {
-  output: string;
-  exitCode: number;
-}
+import type { SandboxCallInput, SandboxCallResult } from "./messages";
 
 export interface SandboxClient {
   call(input: SandboxCallInput): Promise<SandboxCallResult>;
