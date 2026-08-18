@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nixx — Agent ↔ Sandbox Architecture</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --panel-2: #1e222c;
+      --border: #2a2f3a;
+      --text: #e6e8ee;
+      --muted: #9aa3b2;
+      --accent: #4f8cff;
+      --accent-2: #7c5cff;
+      --code-bg: #12151b;
+      --green: #3fb68b;
+      --amber: #e0a458;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .wrap {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 28px 20px;
+      border-right: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    aside h1 {
+      font-size: 18px;
+      margin: 0 0 6px;
+      letter-spacing: -0.02em;
+    }
+
+    aside .sub {
+      color: var(--muted);
+      font-size: 13px;
+      margin: 0 0 24px;
+    }
+
+    aside nav a {
+      display: block;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      margin-bottom: 2px;
+    }
+
+    aside nav a:hover {
+      color: var(--text);
+      background: var(--panel-2);
+    }
+
+    main {
+      padding: 40px 56px 80px;
+      max-width: 960px;
+    }
+
+    h2 {
+      font-size: 24px;
+      letter-spacing: -0.02em;
+      margin: 48px 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h3 {
+      font-size: 18px;
+      margin: 28px 0 10px;
+    }
+
+    p {
+      color: #cdd2dc;
+      margin: 10px 0;
+    }
+
+    code {
+      background: var(--code-bg);
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+      font-size: 13px;
+      color: #d7e0ff;
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      color: #d7e0ff;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13.5px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      background: var(--panel-2);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(79, 140, 255, 0.14);
+      color: #9dbdff;
+    }
+
+    .badge.amber {
+      background: rgba(224, 164, 88, 0.14);
+      color: #ecc68a;
+    }
+
+    .diagram {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      overflow-x: auto;
+      font-family: ui-monospace, "Cascadia Code", monospace;
+      font-size: 12.5px;
+      color: #aeb6c4;
+      white-space: pre;
+    }
+
+    .note {
+      border-left: 3px solid var(--amber);
+      background: rgba(224, 164, 88, 0.08);
+      padding: 10px 14px;
+      border-radius: 0 10px 10px 0;
+      margin: 16px 0;
+      color: #e6c99c;
+    }
+
+    .accent {
+      color: var(--accent);
+    }
+
+    @media (max-width: 800px) {
+      .wrap {
+        grid-template-columns: 1fr;
+      }
+
+      aside {
+        position: static;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      main {
+        padding: 24px 20px 60px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <aside>
+      <h1>Nixx</h1>
+      <p class="sub">Agent ↔ Sandbox Architecture</p>
+      <nav>
+        <a href="#overview">Overview</a>
+        <a href="#packages">Packages &amp; Apps</a>
+        <a href="#contract">Message Contract</a>
+        <a href="#commands">Sandbox Commands</a>
+        <a href="#client">Sandbox Client</a>
+        <a href="#consumer">Result Consumer</a>
+        <a href="#graph">Agent Graph</a>
+        <a href="#worker">Sandbox Worker</a>
+        <a href="#ids">IDs &amp; Threads</a>
+        <a href="#api">Web API</a>
+        <a href="#env">Environment</a>
+        <a href="#run">Running</a>
+        <a href="#deferred">Deferred</a>
+      </nav>
+    </aside>
+
+    <main>
+      <h2 id="overview">Overview</h2>
+      <p>
+        Nixx runs a coding agent that executes work inside an isolated sandbox.
+        The agent does <strong>not</strong> touch the filesystem or shell directly.
+        Instead it communicates with the sandbox through two BullMQ queues backed by Redis.
+      </p>
+
+      <div class="diagram">┌─────────────────────┐        Queue A          ┌──────────────────────┐
+│     agent-brain      │   agent-to-sandbox      │    sandbox-worker     │
+│  (LangGraph + HTTP)  │ ───────────────────────▶│  (executor process)   │
+│                      │                         │                       │
+│  SandboxClient       │ ◀───────────────────────│  executes commands     │
+│  (await result)      │   sandbox-to-agent       │  returns output        │
+└─────────────────────┘        Queue B          └──────────────────────┘
+         ▲
+         │ HTTP POST /run
+         │
+┌─────────────────────┐
+│        web           │
+│  (Next.js backend)   │
+│  auth + thread mgmt  │
+└─────────────────────┘</div>
+
+      <p>The split is deliberate:</p>
+      <ul>
+        <li><strong>agent-brain</strong> owns reasoning (LangGraph) but is sandbox-agnostic.</li>
+        <li><strong>sandbox-worker</strong> owns execution but is agent-agnostic.</li>
+        <li>The only contract is the message shapes and queue names in <code>@repo/contracts</code>.</li>
+      </ul>
+
+      <h2 id="packages">Packages &amp; Apps</h2>
+      <table>
+        <thead>
+          <tr><th>Package / App</th><th>Responsibility</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>@repo/contracts</code></td><td>Shared queue config, message types, SandboxClient interface</td></tr>
+          <tr><td><code>@repo/agent</code></td><td>LangGraph programmer graph and sandbox-backed tools</td></tr>
+          <tr><td><code>@repo/db</code></td><td>Drizzle schema (users, conversations, threads)</td></tr>
+          <tr><td><code>apps/agent-brain</code></td><td>HTTP server that invokes the graph and bridges to BullMQ</td></tr>
+          <tr><td><code>apps/sandbox-worker</code></td><td>BullMQ consumer that executes commands in the sandbox</td></tr>
+          <tr><td><code>apps/web</code></td><td>Next.js primary backend; auth, thread/conversation mgmt, calls agent-brain</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="contract">Message Contract</h2>
+      <h3>SandboxCommandMessage <span class="badge">Queue A</span></h3>
+      <pre><code>{
+  type: "command",
+  commandId: string,       // correlation id
+  threadId: string,
+  conversationId: string,
+  sandboxId: string,
+  command: SandboxCommandName,
+  args: Record&lt;string, unknown&gt;,
+}</code></pre>
+
+      <h3>SandboxResultMessage <span class="badge">Queue B</span></h3>
+      <pre><code>{
+  type: "result",
+  commandId: string,       // same id as the request
+  threadId: string,
+  conversationId: string,
+  sandboxId: string,
+  output: string,
+  exitCode: number,
+  error?: string,
+}</code></pre>
+
+      <p>
+        <code>commandId</code> is generated by the agent's SandboxClient using
+        <code>randomUUID()</code>. The agent stores a pending resolver keyed by that id.
+      </p>
+
+      <h2 id="commands">Supported Sandbox Commands</h2>
+      <p>The current implementation is <strong>read-only plus shell execution</strong>.</p>
+      <table>
+        <thead>
+          <tr><th>Command</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>read_file</code></td><td>Read one or more files</td></tr>
+          <tr><td><code>glob</code></td><td>Find files by pattern</td></tr>
+          <tr><td><code>grep</code></td><td>Search file contents</td></tr>
+          <tr><td><code>run_command</code></td><td>Execute a shell command</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        <strong>Deferred:</strong> <code>write_file</code>, <code>edit</code>, and other modify
+        tools will be added later without changing the queue contract.
+      </div>
+
+      <h2 id="client">Sandbox Client</h2>
+      <p>Defined in <code>apps/agent-brain/src/bullmq-sandbox-client.ts</code>.</p>
+      <pre><code>class BullMqSandboxClient implements SandboxClient {
+  async call(input) {
+    const commandId = randomUUID();
+    await agentToSandboxQueue.add("command", { type: "command", commandId, ...input });
+    return new Promise((resolve, reject) =&gt; {
+      // resolved by result-consumer when the matching result arrives
+    });
+  }
+}</code></pre>
+      <p>There is a hard timeout of <code>120_000ms</code>.</p>
+
+      <h2 id="consumer">Result Consumer</h2>
+      <p>Defined in <code>apps/agent-brain/src/result-consumer.ts</code>.</p>
+      <p>
+        It runs a BullMQ Worker on <code>sandbox-to-agent</code>. For each result job, it looks
+        up the matching pending call by <code>commandId</code> and resolves it.
+      </p>
+
+      <h2 id="graph">Agent Graph</h2>
+      <p>Defined in <code>packages/agent/programmer/graph.ts</code>.</p>
+      <pre><code>createProgrammerGraph({
+  sandboxClient,
+  threadId,
+  conversationId,
+  sandboxId,
+});</code></pre>
+      <table>
+        <thead>
+          <tr><th>Node</th><th>Role</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>generate-action</code></td><td>Binds sandbox tools and produces the next action</td></tr>
+          <tr><td><code>take-action</code></td><td>Executes the first tool call from the last AI message</td></tr>
+          <tr><td><code>reasoning-thinking</code></td><td>Placeholder loop node</td></tr>
+          <tr><td><code>end-conclusion</code></td><td>Summarizes the completed run</td></tr>
+        </tbody>
+      </table>
+      <p>Routing:</p>
+      <ul>
+        <li><code>mark_task_complete</code> → <code>end-conclusion</code></li>
+        <li>any other tool call → <code>take-action</code></li>
+        <li>plain text response → <code>end-conclusion</code></li>
+        <li>after <code>take-action</code> → back to <code>generate-action</code></li>
+      </ul>
+
+      <h2 id="worker">Sandbox Worker</h2>
+      <p>Defined in <code>apps/sandbox-worker/src/main.ts</code>.</p>
+      <p>
+        It runs a BullMQ Worker on <code>agent-to-sandbox</code>, executes the command, then
+        publishes a <code>SandboxResultMessage</code> to <code>sandbox-to-agent</code>.
+      </p>
+
+      <h2 id="ids">IDs, Threads &amp; Conversations</h2>
+      <p>Thread and conversation IDs are owned by the main database, not by the agent.</p>
+      <h3>conversations</h3>
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td>text</td><td>PK, <code>randomUUID()</code></td></tr>
+          <tr><td><code>user_id</code></td><td>text</td><td>FK to users</td></tr>
+          <tr><td><code>title</code></td><td>text</td><td>optional</td></tr>
+          <tr><td><code>created_at</code></td><td>timestamp</td><td></td></tr>
+          <tr><td><code>updated_at</code></td><td>timestamp</td><td></td></tr>
+        </tbody>
+      </table>
+      <h3>threads</h3>
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td>text</td><td>PK, <code>randomUUID()</code></td></tr>
+          <tr><td><code>conversation_id</code></td><td>text</td><td>FK to conversations</td></tr>
+          <tr><td><code>user_id</code></td><td>text</td><td>FK to users</td></tr>
+          <tr><td><code>sandbox_id</code></td><td>text</td><td>optional</td></tr>
+          <tr><td><code>metadata</code></td><td>jsonb</td><td>optional</td></tr>
+          <tr><td><code>created_at</code></td><td>timestamp</td><td></td></tr>
+          <tr><td><code>updated_at</code></td><td>timestamp</td><td></td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="api">Web API</h2>
+      <h3>POST /api/conversations</h3>
+      <pre><code>{ "id": "conversation-uuid" }</code></pre>
+
+      <h3>POST /api/threads</h3>
+      <pre><code>// request
+{ "conversationId": "conversation-uuid", "sandboxId": "optional" }
+
+// response
+{ "id": "thread-uuid" }</code></pre>
+
+      <h3>POST /api/threads/:threadId/run</h3>
+      <pre><code>// request
+{ "query": "Implement ...", "notes": "optional" }
+
+// response
+{ "summary": "..." }</code></pre>
+
+      <h2 id="env">Environment Variables</h2>
+      <h3>agent-brain</h3>
+      <table>
+        <thead><tr><th>Variable</th><th>Default</th></tr></thead>
+        <tbody>
+          <tr><td><code>AGENT_BRAIN_PORT</code></td><td><code>4000</code></td></tr>
+          <tr><td><code>REDIS_HOST</code></td><td><code>localhost</code></td></tr>
+          <tr><td><code>REDIS_PORT</code></td><td><code>6379</code></td></tr>
+          <tr><td><code>OPENAI_MODEL</code></td><td><code>gpt-5-mini</code></td></tr>
+        </tbody>
+      </table>
+      <h3>sandbox-worker</h3>
+      <table>
+        <thead><tr><th>Variable</th><th>Default</th></tr></thead>
+        <tbody>
+          <tr><td><code>SANDBOX_ROOT</code></td><td><code>process.cwd()</code></td></tr>
+          <tr><td><code>REDIS_HOST</code></td><td><code>localhost</code></td></tr>
+          <tr><td><code>REDIS_PORT</code></td><td><code>6379</code></td></tr>
+        </tbody>
+      </table>
+      <h3>web</h3>
+      <table>
+        <thead><tr><th>Variable</th><th>Default</th></tr></thead>
+        <tbody>
+          <tr><td><code>AGENT_BRAIN_URL</code></td><td><code>http://localhost:4000</code></td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="run">Running the System</h2>
+      <pre><code># install
+bun install
+
+# start Redis, then run these in separate terminals:
+
+# 1. sandbox worker
+bun run dev --filter=sandbox-worker
+
+# 2. agent brain
+bun run dev --filter=agent-brain
+
+# 3. web (primary backend)
+bun run dev --filter=web</code></pre>
+
+      <h2 id="deferred">What is Deferred</h2>
+      <ul>
+        <li>Sandbox modify tools (<code>write_file</code>, <code>edit</code>)</li>
+        <li>Checkpointer (graph state persistence)</li>
+        <li>SSE / streaming agent events</li>
+        <li>UI for agent output</li>
+        <li>GitHub installation token wiring in the agent path</li>
+        <li>Real sandbox provisioning (currently <code>sandboxId</code> falls back to <code>threadId</code>)</li>
+      </ul>
+
+      <h2>Typechecking</h2>
+      <pre><code>bun run check-types</code></pre>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,12 +1,20 @@
 {
   "name": "agent-brain",
-  "module": "index.ts",
+  "version": "0.0.0",
   "type": "module",
   "private": true,
-  "devDependencies": {
-    "@types/bun": "latest"
+  "scripts": {
+    "dev": "bun run src/main.ts",
+    "start": "bun run src/main.ts",
+    "check-types": "tsc --noEmit"
   },
-  "peerDependencies": {
-    "typescript": "^5"
+  "dependencies": {
+    "@repo/agent": "*",
+    "@repo/contracts": "*",
+    "bullmq": "^5.34.4"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "5.9.2"
   }
 }

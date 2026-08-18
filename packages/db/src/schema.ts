@@ -57,7 +57,6 @@ export const threads = pgTable(
 
 export const schema = {
   users,
-  accounts,
   conversations,
   threads,
 };
