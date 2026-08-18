@@ -1,18 +1,23 @@
 {
-  "name": "agent",
-  "module": "index.ts",
+  "name": "@repo/agent",
+  "version": "0.0.0",
   "type": "module",
   "private": true,
-  "devDependencies": {
-    "@types/bun": "latest"
+  "exports": {
+    ".": "./index.ts"
   },
-  "peerDependencies": {
-    "typescript": "^5"
+  "scripts": {
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@langchain/core": "^1.2.8",
     "@langchain/langgraph": "^1.4.10",
     "@langchain/openai": "^1.5.8",
+    "@repo/contracts": "*",
     "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "5.9.2"
   }
 }

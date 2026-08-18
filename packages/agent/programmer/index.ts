@@ -1,3 +1,6 @@
-export { programmerGraph } from './graph';
-export type { ProgrammerState } from './types';
-export { ProgrammerStateAnnotation } from './types';
+export { createProgrammerGraph } from "./graph";
+export type {
+  ProgrammerState,
+  ProgrammerGraphDeps,
+} from "./types";
+export { ProgrammerStateAnnotation } from "./types";
