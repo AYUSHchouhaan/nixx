@@ -1,26 +1,31 @@
 import { Worker } from "bullmq";
-import { connection, sandboxToAgentQueue } from "@repo/contracts";
-
-type Resolve = (value: { output: string; exitCode: number }) => void;
-
-// commandId → the resolve fn of the waiting tool call
-const pending = new Map<string, Resolve>();
-
-export function registerPendingCall(commandId: string, resolve: Resolve) {
-  pending.set(commandId, resolve);
-}
+import {
+  QUEUE_NAMES,
+  redisConnection,
+  type SandboxResultMessage,
+} from "@repo/contracts";
+import { resolvePendingCall, rejectPendingCall } from "./pending-calls";
 
 export function startResultConsumer() {
-  new Worker(
+  const worker = new Worker(
     QUEUE_NAMES.sandboxToAgent,
     async (job) => {
-      const { commandId, output, exitCode } = job.data;
-      const resolve = pending.get(commandId);
-      if (resolve) {
-        pending.delete(commandId);
-        resolve({ output, exitCode });   // ← wakes up the tool's await
-      }
+      const data = job.data as SandboxResultMessage;
+      resolvePendingCall(data.commandId, {
+        output: data.output,
+        exitCode: data.exitCode,
+        error: data.error,
+      });
     },
-    { connection },
+    { connection: redisConnection },
   );
+
+  worker.on("failed", (job, err) => {
+    const data = job?.data as SandboxResultMessage | undefined;
+    if (data?.commandId) {
+      rejectPendingCall(data.commandId, err);
+    }
+  });
+
+  return worker;
 }
