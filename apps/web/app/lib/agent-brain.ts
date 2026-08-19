@@ -1,4 +1,7 @@
+import { Client } from "@langchain/langgraph-sdk";
+
 const AGENT_BRAIN_URL = process.env.AGENT_BRAIN_URL ?? "http://localhost:4000";
+const client = new Client({ apiUrl: AGENT_BRAIN_URL });
 
 export async function runAgent(input: {
   threadId: string;
@@ -6,17 +9,25 @@ export async function runAgent(input: {
   sandboxId: string;
   query: string;
   notes?: string;
+  repoUrl: string;
+  branch?: string;
+  installationToken: string;
 }) {
-  const response = await fetch(`${AGENT_BRAIN_URL}/run`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
+  const run = await client.runs.create(input.threadId, "coding", {
+    input: { query: input.query, notes: input.notes ?? "" },
+    config: {
+      configurable: {
+        thread_id: input.threadId,
+        conversation_id: input.conversationId,
+        sandbox_id: input.sandboxId,
+        repo_url: input.repoUrl,
+        branch: input.branch,
+        installation_token: input.installationToken,
+      },
+    },
   });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Agent brain request failed (${response.status}): ${body}`);
-  }
-
-  return (await response.json()) as { summary: string };
+  const result = (await client.runs.join(input.threadId, run.run_id)) as {
+    summary?: string;
+  };
+  return { summary: result.summary ?? "" };
 }

@@ -5,6 +5,7 @@ import { db } from "@repo/db";
 import { threads } from "@repo/db/schema";
 import { eq } from "drizzle-orm";
 import { runAgent } from "../../../../lib/agent-brain";
+import { getInstallationToken } from "../../../../lib/github-installation";
 
 export async function POST(
   request: Request,
@@ -19,10 +20,19 @@ export async function POST(
   }
 
   const { threadId } = await params;
-  const body = (await request.json()) as { query: string; notes?: string };
+  const body = (await request.json()) as {
+    query: string;
+    notes?: string;
+    repoUrl?: string;
+    branch?: string;
+  };
 
   if (!body.query) {
     return NextResponse.json({ error: "query is required" }, { status: 400 });
+  }
+
+  if (!body.repoUrl) {
+    return NextResponse.json({ error: "repoUrl is required" }, { status: 400 });
   }
 
   const [thread] = await db
@@ -38,12 +48,19 @@ export async function POST(
   const sandboxId = thread.sandboxId ?? threadId;
 
   try {
+    const { token: installationToken } = await getInstallationToken(
+      session.user.id,
+    );
+
     const { summary } = await runAgent({
       threadId,
       conversationId: thread.conversationId,
       sandboxId,
       query: body.query,
       notes: body.notes,
+      repoUrl: body.repoUrl,
+      branch: body.branch,
+      installationToken,
     });
 
     return NextResponse.json({ summary });
