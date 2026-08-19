@@ -2,6 +2,7 @@ import { HumanMessage, SystemMessage, AIMessage } from "@langchain/core/messages
 import { createSandboxTools } from "../tools";
 import type { ProgrammerState } from "../types";
 import { createChatModel } from "../model";
+import type { RunnableConfig } from "@langchain/core/runnables";
 
 const HISTORY_WINDOW = 300;
 
@@ -29,6 +30,8 @@ Tool guide:
 - glob: Find files by path pattern when you do not know exact file locations.
 - grep: Search file contents by keyword when you know what text to find.
 - read: Read file contents before editing. Use for understanding exact current code and formatting.
+- create_file: Create a new file inside the sandbox when it does not already exist.
+- edit: Apply targeted replacements to an existing file inside the sandbox.
 - run: Run shell commands inside the sandbox for checks (test/build/list/status).
 - mark_task_complete: Call only when all required work is done and no further tool/action is needed.
 
@@ -46,6 +49,7 @@ function buildFirstTaskMessage(state: ProgrammerState): HumanMessage {
 export async function generateActionNode(
   state: ProgrammerState,
   deps: import("../types").ProgrammerGraphDeps,
+  config: RunnableConfig,
 ): Promise<Partial<ProgrammerState>> {
   const tools = createSandboxTools(deps);
   const llm = createChatModel().bindTools([
@@ -53,6 +57,8 @@ export async function generateActionNode(
     tools.grep,
     tools.read,
     tools.run,
+    tools.createFile,
+    tools.edit,
     tools.markTaskComplete,
   ]);
 
@@ -65,7 +71,7 @@ export async function generateActionNode(
       ? [systemMessage, firstTaskMessage]
       : [systemMessage, ...messageHistory.slice(-HISTORY_WINDOW)];
 
-  const responseMessage = (await llm.invoke(inputMessages)) as AIMessage;
+  const responseMessage = (await llm.invoke(inputMessages, config)) as AIMessage;
 
   const newMessages =
     messageHistory.length === 0

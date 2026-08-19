@@ -1,0 +1,41 @@
+import type { ProgrammerState, ProgrammerGraphDeps } from "../types";
+import type { RunnableConfig } from "@langchain/core/runnables";
+
+function getConfigurableString(config: RunnableConfig, name: string): string {
+  const value = config.configurable?.[name];
+  if (typeof value !== "string" || !value) {
+    throw new Error(`Missing configurable.${name}`);
+  }
+  return value;
+}
+
+export async function prepareSandboxNode(
+  state: ProgrammerState,
+  deps: ProgrammerGraphDeps,
+  config: RunnableConfig,
+): Promise<Partial<ProgrammerState>> {
+  const threadId = getConfigurableString(config, "thread_id");
+  const conversationId = getConfigurableString(config, "conversation_id");
+  const sandboxId = getConfigurableString(config, "sandbox_id");
+  const repoUrl = getConfigurableString(config, "repo_url");
+  const installationToken = getConfigurableString(config, "installation_token");
+
+  const branchValue = config.configurable?.branch;
+  const branch =
+    typeof branchValue === "string" && branchValue ? branchValue : undefined;
+
+  const result = await deps.sandboxClient.provision({
+    threadId,
+    conversationId,
+    sandboxId,
+    repoUrl,
+    branch,
+    installationToken,
+  });
+
+  if (result.error) {
+    throw new Error(result.error);
+  }
+
+  return {};
+}

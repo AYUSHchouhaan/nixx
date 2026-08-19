@@ -7,6 +7,7 @@ import {
   takeActionNode,
   endConclusionNode,
   reasoningThinkingNode,
+  prepareSandboxNode,
 } from "./nodes";
 
 function routeAfterGenerateAction(state: ProgrammerState): string {
@@ -27,11 +28,19 @@ function routeAfterGenerateAction(state: ProgrammerState): string {
 
 export function createProgrammerGraph(deps: ProgrammerGraphDeps) {
   const workflow = new StateGraph(ProgrammerStateAnnotation)
-    .addNode("generate-action", (state) => generateActionNode(state, deps))
-    .addNode("take-action", (state) => takeActionNode(state, deps))
+    .addNode("prepare-sandbox", (state, config) =>
+      prepareSandboxNode(state, deps, config),
+    )
+    .addNode("generate-action", (state, config) =>
+      generateActionNode(state, deps, config),
+    )
+    .addNode("take-action", (state, config) =>
+      takeActionNode(state, deps, config),
+    )
     .addNode("reasoning-thinking", reasoningThinkingNode)
     .addNode("end-conclusion", endConclusionNode)
-    .addEdge(START, "generate-action")
+    .addEdge(START, "prepare-sandbox")
+    .addEdge("prepare-sandbox", "generate-action")
     .addConditionalEdges("generate-action", routeAfterGenerateAction, {
       "take-action": "take-action",
       "end-conclusion": "end-conclusion",
@@ -41,7 +50,7 @@ export function createProgrammerGraph(deps: ProgrammerGraphDeps) {
     .addEdge("reasoning-thinking", "generate-action")
     .addEdge("end-conclusion", END);
 
-  const graph = workflow.compile();
+  const graph = workflow.compile({ checkpointer: deps.checkpointer });
   graph.name = "Programmer Agent — Execute Tasks";
   return graph;
 }

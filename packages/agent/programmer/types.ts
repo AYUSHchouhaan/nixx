@@ -1,6 +1,7 @@
 import { Annotation } from "@langchain/langgraph";
 import { BaseMessage } from "@langchain/core/messages";
 import type { SandboxClient } from "@repo/contracts";
+import type { BaseCheckpointSaver } from "@langchain/langgraph-checkpoint";
 
 export const ProgrammerStateAnnotation = Annotation.Root({
   query: Annotation<string>,
@@ -25,7 +26,5 @@ export type ProgrammerState = typeof ProgrammerStateAnnotation.State;
 
 export interface ProgrammerGraphDeps {
   sandboxClient: SandboxClient;
-  threadId: string;
-  conversationId: string;
-  sandboxId: string;
+  checkpointer?: BaseCheckpointSaver;
 }

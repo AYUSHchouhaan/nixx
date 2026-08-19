@@ -2,10 +2,12 @@ import { ToolMessage, AIMessage } from "@langchain/core/messages";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import { createSandboxTools } from "../tools";
 import type { ProgrammerState, ProgrammerGraphDeps } from "../types";
+import type { RunnableConfig } from "@langchain/core/runnables";
 
 export async function takeActionNode(
   state: ProgrammerState,
   deps: ProgrammerGraphDeps,
+  config: RunnableConfig,
 ): Promise<Partial<ProgrammerState>> {
   const tools = createSandboxTools(deps);
 
@@ -14,6 +16,8 @@ export async function takeActionNode(
     grep: tools.grep,
     read: tools.read,
     run: tools.run,
+    create_file: tools.createFile,
+    edit: tools.edit,
     mark_task_complete: tools.markTaskComplete,
   };
 
@@ -33,7 +37,7 @@ export async function takeActionNode(
   let result: string;
   if (t) {
     try {
-      result = String(await t.invoke(args));
+      result = String(await t.invoke(args, config));
     } catch (err) {
       result = `Error invoking ${name}: ${err instanceof Error ? err.message : String(err)}`;
     }
