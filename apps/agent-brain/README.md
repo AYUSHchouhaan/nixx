@@ -1,15 +1,15 @@
 # agent-brain
 
-To install dependencies:
+Install dependencies from the repository root:
 
 ```bash
 bun install
 ```
 
-To run:
+Start the LangGraph development server:
 
 ```bash
-bun run index.ts
+bun run --filter agent-brain langgraph:dev
 ```
 
-This project was created using `bun init` in bun v1.3.12. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+The server loads `langgraph.json`, exposes the `coding` graph, and uses Postgres for checkpointing. Set `DATABASE_URL`, `OPENAI_API_KEY`, and the Redis variables in `.env` before starting it.

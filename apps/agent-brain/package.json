@@ -4,17 +4,20 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun run src/main.ts",
-    "start": "bun run src/main.ts",
-    "check-types": "tsc --noEmit"
+    "dev": "langgraphjs dev --config langgraph.json",
+    "start": "langgraphjs dev --config langgraph.json",
+    "check-types": "tsc --noEmit",
+    "langgraph:dev": "langgraphjs dev --config langgraph.json"
   },
   "dependencies": {
     "@repo/agent": "*",
     "@repo/contracts": "*",
-    "bullmq": "^5.34.4"
+    "@langchain/langgraph-checkpoint-postgres": "^1.0.4",
+    "bullmq": "^5.34.4",
+    "dotenv": "^17.4.2"
   },
   "devDependencies": {
-    "@types/bun": "latest",
+    "@langchain/langgraph-cli": "^1.4.4",
     "typescript": "5.9.2"
   }
 }
