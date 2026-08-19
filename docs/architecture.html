@@ -299,7 +299,7 @@
       </p>
 
       <h2 id="commands">Supported Sandbox Commands</h2>
-      <p>The current implementation is <strong>read-only plus shell execution</strong>.</p>
+      <p>The sandbox worker supports read, search, shell execution, and file mutation inside the cloned repository.</p>
       <table>
         <thead>
           <tr><th>Command</th><th>Purpose</th></tr>
@@ -309,12 +309,10 @@
           <tr><td><code>glob</code></td><td>Find files by pattern</td></tr>
           <tr><td><code>grep</code></td><td>Search file contents</td></tr>
           <tr><td><code>run_command</code></td><td>Execute a shell command</td></tr>
+          <tr><td><code>create_file</code></td><td>Create a new file</td></tr>
+          <tr><td><code>edit_file</code></td><td>Apply targeted replacements to an existing file</td></tr>
         </tbody>
       </table>
-      <div class="note">
-        <strong>Deferred:</strong> <code>write_file</code>, <code>edit</code>, and other modify
-        tools will be added later without changing the queue contract.
-      </div>
 
       <h2 id="client">Sandbox Client</h2>
       <p>Defined in <code>apps/agent-brain/src/bullmq-sandbox-client.ts</code>.</p>

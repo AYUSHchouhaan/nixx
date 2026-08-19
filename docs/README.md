@@ -76,7 +76,7 @@ The split is deliberate:
 
 ## 4. Supported sandbox commands
 
-The current implementation is intentionally **read-only plus shell execution**. File mutation tools are deferred.
+The sandbox worker supports read, search, shell execution, and file mutation inside the cloned repository.
 
 | Command | Purpose |
 |---|---|
@@ -84,8 +84,8 @@ The current implementation is intentionally **read-only plus shell execution**. 
 | `glob` | Find files by pattern |
 | `grep` | Search file contents |
 | `run_command` | Execute a shell command |
-
-**Deferred:** `write_file`, `edit`, and any other modify tools. The sandbox worker will gain these later without changing the queue contract.
+| `create_file` | Create a new file |
+| `edit_file` | Apply targeted replacements to an existing file |
 
 ## 5. Sandbox client
 
