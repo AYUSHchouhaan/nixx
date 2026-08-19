@@ -1,34 +1,80 @@
-import type { SandboxCallResult } from "@repo/contracts";
+import type {
+  SandboxCallResult,
+  SandboxProvisionResult,
+} from "@repo/contracts";
 
-type PendingCall = {
-  resolve: (value: SandboxCallResult) => void;
+type PendingCall<T> = {
+  resolve: (value: T) => void;
   reject: (reason: Error) => void;
   timer: ReturnType<typeof setTimeout>;
 };
 
-const pending = new Map<string, PendingCall>();
+const commandCalls = new Map<string, PendingCall<SandboxCallResult>>();
+const provisionCalls = new Map<string, PendingCall<SandboxProvisionResult>>();
 
-export function registerPendingCall(
+function register<T>(
+  map: Map<string, PendingCall<T>>,
   commandId: string,
-  call: PendingCall,
+  call: PendingCall<T>,
 ) {
-  pending.set(commandId, call);
+  map.set(commandId, call);
 }
 
-export function resolvePendingCall(commandId: string, result: SandboxCallResult) {
-  const call = pending.get(commandId);
+function resolve<T>(
+  map: Map<string, PendingCall<T>>,
+  commandId: string,
+  result: T,
+): boolean {
+  const call = map.get(commandId);
   if (!call) return false;
-  pending.delete(commandId);
+  map.delete(commandId);
   clearTimeout(call.timer);
   call.resolve(result);
   return true;
 }
 
-export function rejectPendingCall(commandId: string, reason: Error) {
-  const call = pending.get(commandId);
+function reject<T>(
+  map: Map<string, PendingCall<T>>,
+  commandId: string,
+  reason: Error,
+): boolean {
+  const call = map.get(commandId);
   if (!call) return false;
-  pending.delete(commandId);
+  map.delete(commandId);
   clearTimeout(call.timer);
   call.reject(reason);
   return true;
+}
+
+export function registerPendingCall(
+  commandId: string,
+  call: PendingCall<SandboxCallResult>,
+) {
+  register(commandCalls, commandId, call);
+}
+
+export function resolvePendingCall(commandId: string, result: SandboxCallResult) {
+  return resolve(commandCalls, commandId, result);
+}
+
+export function rejectPendingCall(commandId: string, reason: Error) {
+  return reject(commandCalls, commandId, reason);
+}
+
+export function registerPendingProvision(
+  commandId: string,
+  call: PendingCall<SandboxProvisionResult>,
+) {
+  register(provisionCalls, commandId, call);
+}
+
+export function resolvePendingProvision(
+  commandId: string,
+  result: SandboxProvisionResult,
+) {
+  return resolve(provisionCalls, commandId, result);
+}
+
+export function rejectPendingProvision(commandId: string, reason: Error) {
+  return reject(provisionCalls, commandId, reason);
 }
