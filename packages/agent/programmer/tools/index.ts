@@ -6,7 +6,6 @@ import { createRunTool } from "./bash";
 import { createFileTool } from "./create-file";
 import { createEditTool } from "./edit";
 import { createMarkTaskCompleteTool } from "./mark-task-complete";
-import { createCompletePlanningTool } from "./complete-planning";
 
 export function createSandboxTools(deps: ProgrammerGraphDeps) {
   return {
@@ -17,7 +16,6 @@ export function createSandboxTools(deps: ProgrammerGraphDeps) {
     createFile: createFileTool(deps),
     edit: createEditTool(deps),
     markTaskComplete: createMarkTaskCompleteTool(),
-    completePlanning: createCompletePlanningTool(),
   };
 }
 
