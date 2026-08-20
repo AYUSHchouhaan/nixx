@@ -118,6 +118,34 @@ export async function provisionSandbox(
     };
   }
 
+  const configResults = await Promise.all([
+    runGit(
+      [
+        "config",
+        "http.extraheader",
+        `AUTHORIZATION: basic ${auth}`,
+      ],
+      sandboxPath,
+    ),
+    runGit(["config", "user.name", "Nixx"], sandboxPath),
+    runGit(
+      ["config", "user.email", "noreply@nixx.dev"],
+      sandboxPath,
+    ),
+    runGit(["config", "commit.gpgsign", "false"], sandboxPath),
+  ]);
+
+  for (const result of configResults) {
+    if (result.exitCode !== 0) {
+      return {
+        sandboxId: input.sandboxId,
+        sandboxPath,
+        cloned: true,
+        error: result.error ?? result.output,
+      };
+    }
+  }
+
   return {
     sandboxId: input.sandboxId,
     sandboxPath,
