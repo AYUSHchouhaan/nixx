@@ -8,7 +8,8 @@ export type SandboxCommandName =
   | "grep"
   | "run_command"
   | "create_file"
-  | "edit_file";
+  | "edit_file"
+  | "git";
 
 export interface SandboxExecutionResult {
   output: string;
@@ -181,6 +182,43 @@ async function editFile(
   }
 }
 
+async function runGit(
+  root: string,
+  args: string[],
+): Promise<SandboxExecutionResult> {
+  return new Promise((resolve) => {
+    const child = spawn("git", args, {
+      cwd: root,
+      windowsHide: true,
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout?.on("data", (d: Buffer) => {
+      stdout += d.toString("utf8");
+    });
+    child.stderr?.on("data", (d: Buffer) => {
+      stderr += d.toString("utf8");
+    });
+
+    child.on("error", (err) => {
+      resolve({
+        output: `git spawn error: ${err.message}`,
+        exitCode: 1,
+        error: err.message,
+      });
+    });
+
+    child.on("exit", (code) => {
+      resolve({
+        output: [stdout.trim(), stderr.trim()].filter(Boolean).join("\n"),
+        exitCode: code ?? 1,
+      });
+    });
+  });
+}
+
 function runCommand(root: string, command: string): Promise<SandboxExecutionResult> {
   return new Promise((resolve) => {
     const shell = process.platform === "win32" ? "powershell.exe" : "/bin/sh";
@@ -258,6 +296,8 @@ export async function executeSandboxCommand(
         ),
         exitCode: 0,
       };
+    case "git":
+      return runGit(root, (args.args as string[]) ?? []);
     default:
       return {
         output: "",
