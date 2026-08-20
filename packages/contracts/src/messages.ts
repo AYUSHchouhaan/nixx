@@ -5,6 +5,7 @@ export const SANDBOX_COMMANDS = {
   run: "run_command",
   createFile: "create_file",
   editFile: "edit_file",
+  git: "git",
 } as const;
 
 export type SandboxCommandName =
