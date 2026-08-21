@@ -8,6 +8,8 @@ import {
   endConclusionNode,
   reasoningThinkingNode,
   prepareSandboxNode,
+  createEmptyPrNode,
+  openPullRequestNode,
 } from "./nodes";
 
 function routeAfterGenerateAction(state: ProgrammerState): string {
@@ -18,18 +20,21 @@ function routeAfterGenerateAction(state: ProgrammerState): string {
   if (lastAI?.tool_calls?.length) {
     const toolName = lastAI.tool_calls[0]?.name;
     if (toolName === "mark_task_complete") {
-      return "end-conclusion";
+      return "open-pull-request";
     }
     return "take-action";
   }
 
-  return "end-conclusion";
+  return "open-pull-request";
 }
 
 export function createProgrammerGraph(deps: ProgrammerGraphDeps) {
   const workflow = new StateGraph(ProgrammerStateAnnotation)
     .addNode("prepare-sandbox", (state, config) =>
       prepareSandboxNode(state, deps, config),
+    )
+    .addNode("create-empty-pr", (state, config) =>
+      createEmptyPrNode(state, deps, config),
     )
     .addNode("generate-action", (state, config) =>
       generateActionNode(state, deps, config),
@@ -38,16 +43,21 @@ export function createProgrammerGraph(deps: ProgrammerGraphDeps) {
       takeActionNode(state, deps, config),
     )
     .addNode("reasoning-thinking", reasoningThinkingNode)
+    .addNode("open-pull-request", (state, config) =>
+      openPullRequestNode(state, deps, config),
+    )
     .addNode("end-conclusion", endConclusionNode)
     .addEdge(START, "prepare-sandbox")
-    .addEdge("prepare-sandbox", "generate-action")
+    .addEdge("prepare-sandbox", "create-empty-pr")
+    .addEdge("create-empty-pr", "generate-action")
     .addConditionalEdges("generate-action", routeAfterGenerateAction, {
       "take-action": "take-action",
-      "end-conclusion": "end-conclusion",
+      "open-pull-request": "open-pull-request",
       "reasoning-thinking": "reasoning-thinking",
     })
     .addEdge("take-action", "generate-action")
     .addEdge("reasoning-thinking", "generate-action")
+    .addEdge("open-pull-request", "end-conclusion")
     .addEdge("end-conclusion", END);
 
   const graph = workflow.compile({ checkpointer: deps.checkpointer });
