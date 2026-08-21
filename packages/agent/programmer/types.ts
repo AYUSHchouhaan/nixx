@@ -20,6 +20,11 @@ export const ProgrammerStateAnnotation = Annotation.Root({
     reducer: (_, update) => update,
     default: () => "",
   }),
+
+  pullRequest: Annotation<{ number: number; htmlUrl: string } | null>({
+    reducer: (_, update) => update,
+    default: () => null,
+  }),
 });
 
 export type ProgrammerState = typeof ProgrammerStateAnnotation.State;
