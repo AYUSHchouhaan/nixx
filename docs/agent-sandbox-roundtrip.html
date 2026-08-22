@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nixx — The Agent ↔ Sandbox Round-Trip (pending-calls &amp; result-consumer)</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --panel-2: #1e222c;
+      --border: #2a2f3a;
+      --text: #e6e8ee;
+      --muted: #9aa3b2;
+      --accent: #4f8cff;
+      --accent-2: #7c5cff;
+      --code-bg: #12151b;
+      --green: #3fb68b;
+      --red: #e05252;
+      --amber: #e0a458;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .wrap {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 28px 20px;
+      border-right: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    aside h1 { font-size: 18px; margin: 0 0 6px; letter-spacing: -0.02em; }
+    aside .sub { color: var(--muted); font-size: 13px; margin: 0 0 24px; }
+
+    aside nav a {
+      display: block;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      margin-bottom: 2px;
+    }
+    aside nav a:hover { color: var(--text); background: var(--panel-2); }
+
+    main { padding: 40px 56px 80px; max-width: 980px; }
+
+    h2 {
+      font-size: 24px;
+      letter-spacing: -0.02em;
+      margin: 48px 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    h3 { font-size: 18px; margin: 28px 0 10px; }
+
+    p { color: #cdd2dc; margin: 10px 0; }
+
+    ul, ol { color: #cdd2dc; }
+    li { margin: 6px 0; }
+
+    code {
+      background: var(--code-bg);
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+      font-size: 13px;
+      color: #d7e0ff;
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    pre code { background: none; padding: 0; color: #d7e0ff; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13.5px;
+    }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; background: var(--panel-2); }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(79, 140, 255, 0.14);
+      color: #9dbdff;
+    }
+    .badge.amber { background: rgba(224, 164, 88, 0.14); color: #ecc68a; }
+    .badge.green { background: rgba(63, 182, 139, 0.14); color: #7ed6b5; }
+    .badge.red   { background: rgba(224, 82, 82, 0.14);  color: #ef9a9a; }
+
+    .diagram {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      overflow-x: auto;
+      font-family: ui-monospace, "Cascadia Code", monospace;
+      font-size: 12.5px;
+      color: #aeb6c4;
+      white-space: pre;
+      line-height: 1.45;
+    }
+
+    .note {
+      border-left: 3px solid var(--amber);
+      background: rgba(224, 164, 88, 0.08);
+      padding: 10px 14px;
+      border-radius: 0 10px 10px 0;
+      margin: 16px 0;
+      color: #e6c99c;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 16px 0;
+    }
+
+    .step {
+      display: flex;
+      gap: 14px;
+      margin: 14px 0;
+    }
+    .step .num {
+      flex: 0 0 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #08111f;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+    }
+    .step .body { flex: 1; }
+    .step .body .title { font-weight: 600; color: var(--text); }
+
+    .file {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 16px 0;
+      background: var(--panel);
+    }
+    .file .file-head {
+      padding: 10px 16px;
+      background: var(--panel-2);
+      font-family: ui-monospace, "Cascadia Code", monospace;
+      font-size: 13px;
+      color: #9dbdff;
+      border-bottom: 1px solid var(--border);
+    }
+    .file pre { border: none; border-radius: 0; margin: 0; }
+
+    .accent { color: var(--accent); }
+    .green { color: var(--green); }
+    .red { color: var(--red); }
+    .muted { color: var(--muted); }
+
+    @media (max-width: 800px) {
+      .wrap { grid-template-columns: 1fr; }
+      aside {
+        position: static;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+      main { padding: 24px 20px 60px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <aside>
+      <h1>Nixx</h1>
+      <p class="sub">Agent ↔ Sandbox Round-Trip</p>
+      <nav>
+        <a href="#overview">Overview</a>
+        <a href="#problem">The Problem</a>
+        <a href="#mental-model">Mental Model</a>
+        <a href="#usage">Where Each File Is Used</a>
+        <a href="#walkthrough">Step-by-Step Walkthrough</a>
+        <a href="#anatomy">File Anatomy</a>
+        <a href="#reference">Function Reference</a>
+        <a href="#failures">Failures &amp; Timeouts</a>
+        <a href="#why-separate">Why A Separate File?</a>
+        <a href="#runtime">When Does It Run?</a>
+        <a href="#summary">Key Takeaways</a>
+      </nav>
+    </aside>
+
+    <main>
+      <h2 id="overview">Overview</h2>
+      <p>
+        The Nixx coding agent runs inside <strong>agent-brain</strong> (a LangGraph server) but never touches
+        the filesystem or shell directly. All file, shell, and git operations are executed by a separate process,
+        <strong>sandbox-worker</strong>, against an isolated cloned repo.
+      </p>
+      <p>
+        The two processes communicate exclusively through two BullMQ queues backed by Redis. This document explains
+        the machinery that makes a single request/responses round-trip work — specifically the pair of files
+        <code>src/pending-calls.ts</code> and <code>src/result-consumer.ts</code> in
+        <code>apps/agent-brain</code> — and exactly where they are used.
+      </p>
+
+      <div class="diagram">┌─────────────────────┐  queue A   ┌──────────────────────┐
+│     agent-brain      │ agent-to-  │    sandbox-worker     │
+│  (LangGraph server)  │  sandbox   │   (separate process)  │
+│                      │ ──────────▶│                       │
+│  bullmq-sandbox-     │            │  src/main.ts Worker   │
+│  client.ts   (ask)   │ ◀──────────│  src/executor.ts      │
+│  pending-calls.ts    │ queue B    │  src/provision.ts     │
+│  result-consumer.ts  │ sandbox-   │  (does the real work) │
+│  (reply)             │ to-agent   │                       │
+└─────────────────────┘             └──────────────────────┘
+         ▲
+         │ HTTP (LangGraph SDK) — triggered by apps/web
+         │
+┌─────────────────────┐
+│        web           │
+│  (Next.js app)       │
+│  POST /api/threads/..│
+└─────────────────────┘</div>
+
+      <h2 id="problem">The Problem</h2>
+      <p>
+        <code>BullMqSandboxClient.call()</code> must return a <strong>Promise</strong> that the agent can
+        <code>await</code>. But the answer is not produced in that function. It is produced <em>later</em>,
+        in a <em>different process</em>, and it arrives back in a <em>different file</em>
+        (<code>result-consumer.ts</code>) on a <em>different queue</em> (<code>sandbox-to-agent</code>).
+      </p>
+
+      <div class="card">
+        <p><strong>The core problem:</strong></p>
+        <ul>
+          <li><code class="green">call()</code> creates a Promise (file A, outbound queue).</li>
+          <li><code class="red">result-consumer</code> receives the answer (file C, inbound queue).</li>
+          <li>Two files, two queues, two processes — but only <strong>one Promise</strong> that must resolve.</li>
+        </ul>
+        <p>
+          The connection is a random <code class="accent">commandId</code>. File A registers the Promise under that
+          id. File C looks it up when the answer arrives and resolves it. The registry that stores this mapping
+          lives in <code>pending-calls.ts</code>.
+        </p>
+      </div>
+
+      <h2 id="mental-model">Mental Model</h2>
+      <p>Think of a restaurant:</p>
+      <ul>
+        <li>
+          You (the agent) hand the waiter (<code>bullmq-sandbox-client</code>) a numbered ticket
+          (<code class="accent">commandId</code>) and wait at your table.
+        </li>
+        <li>The kitchen (<code>sandbox-worker</code>) prepares the order in another room.</li>
+        <li>When ready, the kitchen calls out the ticket number to the front desk.</li>
+        <li>The front desk (<code>result-consumer</code>) looks up who holds that ticket
+          (<code>pending-calls.ts</code>) and calls you up — resolving your Promise.</li>
+      </ul>
+
+      <div class="diagram"> agent-brain process                              sandbox-worker process
+ ┌──────────────────────────────────────┐   ┌──────────────────────────────────┐
+ │ 1. call() generates commandId        │   │                                   │
+ │ 2. registerPendingCall(commandId,    │   │                                   │
+ │        { resolve, reject, timer })   │   │                                   │
+ │         ▼                            │   │                                   │
+ │    Map{ commandId → Promise }        │   │                                   │
+ │         ▲                            │   │                                   │
+ │ 4. resolvePendingCall(commandId,     │   │                                   │
+ │        result)  → Promise resolves   │   │                                   │
+ └──────┬───────────────────────────────┘   └──────▲────────────────────────────┘
+        │ 3. queue.add("command", msg)            │ 3. worker executes + replies
+        └───────────────────────┬─────────────────┘
+                                ▼
+                     Redis  (BullMQ queues)</div>
+
+      <h2 id="usage">Where Each File Is Used</h2>
+      <p>
+        The only files that ever touch <code>pending-calls.ts</code> are
+        <code>bullmq-sandbox-client.ts</code> (the <strong>writer</strong>) and
+        <code>result-consumer.ts</code> (the <strong>reader</strong>). The only place
+        <code>result-consumer.ts</code> is started is <code>src/graph.ts</code> at boot.
+      </p>
+
+      <div class="diagram">apps/agent-brain/src/graph.ts            ← LangGraph server entry point
+  │ ① on boot
+  ├─▶ startResultConsumer()               ← from result-consumer.ts
+  │      creates BullMQ Worker on "sandbox-to-agent"
+  │
+  └─▶ createProgrammerGraph({ sandboxClient: new BullMqSandboxClient(), ... })
+        └─▶ @repo/agent graph (the AI loop)
+              └─▶ tools: read, glob, grep, run, create_file, edit
+                   └─▶ sandboxCall() → deps.sandboxClient.call({...})   [tools/helpers.ts]
+                         └─▶ BullMqSandboxClient.call()                 [bullmq-sandbox-client.ts]
+                               ├─▶ registerPendingCall(id, promise)     [pending-calls.ts]
+                               └─▶ queue.add("command", msg) → Redis "agent-to-sandbox"
+                                                                          │
+                                                                          ▼
+                                              Redis: "agent-to-sandbox"
+                                                                          │
+                                                                          ▼
+                                              sandbox-worker (separate process)
+                                                src/main.ts → executor.ts / provision.ts
+                                                └─▶ queue.add → Redis "sandbox-to-agent"
+                                                                          │
+                                                                          ▼
+                                              Redis: "sandbox-to-agent"
+                                                                          │
+                                                                          ▼
+                                              result-consumer.ts Worker (started in ①)
+                                                └─▶ resolvePendingCall(id, result)   [pending-calls.ts]
+                                                      └─▶ Promise from call() resolves</div>
+
+      <table>
+        <thead>
+          <tr><th>File</th><th>Role</th><th>Reads / Writes</th><th>Started by</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>pending-calls.ts</code></td>
+            <td>Shared in-memory registry of pending Promises</td>
+            <td>Written by client, read by consumer</td>
+            <td>Imported by the other two; no own startup</td>
+          </tr>
+          <tr>
+            <td><code>bullmq-sandbox-client.ts</code></td>
+            <td>Implements <code>SandboxClient</code>; sends requests</td>
+            <td>Writes (registers), also rejects on timeout</td>
+            <td>Instantiated in <code>graph.ts</code></td>
+          </tr>
+          <tr>
+            <td><code>result-consumer.ts</code></td>
+            <td>BullMQ Worker; receives replies and resolves</td>
+            <td>Reads (resolves / rejects)</td>
+            <td><code>startResultConsumer()</code> in <code>graph.ts</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 id="walkthrough">Step-by-Step Walkthrough</h2>
+      <p>
+        Suppose the AI agent (running inside agent-brain) decides to read a file with the
+        <code>read</code> tool.
+      </p>
+
+      <div class="step">
+        <div class="num">1</div>
+        <div class="body">
+          <div class="title">The agent calls a tool</div>
+          <p>
+            <code>packages/agent/programmer/tools/read.ts</code> → <code>helpers.ts sandboxCall()</code> →
+            <code>deps.sandboxClient.call({ threadId, conversationId, sandboxId, command: "read_file", args })</code>.
+            <code>deps.sandboxClient</code> is the <code>BullMqSandboxClient</code> created in <code>graph.ts</code>.
+          </p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="num">2</div>
+        <div class="body">
+          <div class="title"><code>call()</code> registers a pending Promise and enqueues</div>
+          <pre><code>const commandId = randomUUID();              // e.g. "3f8a-…-9c21"
+const message = { type: "command", commandId, ...input };
+
+return new Promise((resolve, reject) =&gt; {
+  const timer = setTimeout(
+    () =&gt; rejectPendingCall(commandId, new Error("Sandbox timeout …")),
+    CALL_TIMEOUT_MS,                              // 120 000 ms
+  );
+  registerPendingCall(commandId, { resolve, reject, timer }); // ← store promise
+  void agentToSandboxQueue.add("command", message);           // ← send to Redis
+});</code></pre>
+          <p>
+            Now <code>pending-calls.ts</code> holds:
+            <code>commandCalls = Map { "3f8a-…-9c21" → { resolve, reject, timer } }</code>.
+            The tool call is <strong>blocked, awaiting</strong> that Promise.
+          </p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="num">3</div>
+        <div class="body">
+          <div class="title">sandbox-worker does the work and replies</div>
+          <p>
+            A separate process picks the job off <code>agent-to-sandbox</code>, runs
+            <code>executor.ts → readFiles()</code>, and posts a <code>result</code> message back to
+            <code>sandbox-to-agent</code> carrying the <strong>same <code>commandId</code></strong>.
+          </p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="num">4</div>
+        <div class="body">
+          <div class="title">result-consumer resolves the Promise</div>
+          <pre><code>// result-consumer.ts
+resolvePendingCall(data.commandId, { output, exitCode, error });</code></pre>
+          <p>
+            In <code>pending-calls.ts</code>, <code>resolve()</code>:
+          </p>
+          <ul>
+            <li>looks up <code>"3f8a-…-9c21"</code> → finds the Promise</li>
+            <li><code>map.delete(commandId)</code> — one-shot, removes it</li>
+            <li><code>clearTimeout(timer)</code> — cancels the 120s timer</li>
+            <li><code>call.resolve(result)</code> — the Promise in step 2 resolves, and the agent’s
+              <code>read</code> tool returns the file contents.</li>
+          </ul>
+        </div>
+      </div>
+
+      <p>
+        The <code class="accent">commandId</code> is the only thing that connects step 2 and step 4.
+      </p>
+
+      <h2 id="anatomy">File Anatomy</h2>
+
+      <div class="file">
+        <div class="file-head">apps/agent-brain/src/pending-calls.ts</div>
+        <pre><code>type PendingCall&lt;T&gt; = {
+  resolve: (value: T) =&gt; void;      // resolve the agent's awaiting Promise
+  reject:  (reason: Error) =&gt; void; // reject it (timeout / failure)
+  timer:   ReturnType&lt;typeof setTimeout&gt;; // 120s safety-net timer
+};
+
+const commandCalls   = new Map&lt;string, PendingCall&lt;SandboxCallResult&gt;&gt;();
+const provisionCalls = new Map&lt;string, PendingCall&lt;SandboxProvisionResult&gt;&gt;();
+
+// generic helpers — register / resolve / reject, all one-shot
+function register(map, commandId, call) { map.set(commandId, call); }
+function resolve(map, commandId, result) {
+  const call = map.get(commandId);
+  if (!call) return false;              // already answered / timed out
+  map.delete(commandId);                // one-shot
+  clearTimeout(call.timer);             // cancel safety net
+  call.resolve(result);
+  return true;
+}
+function reject(map, commandId, reason) { /* same, but call.reject */ }
+
+// typed public API (writer side)         (reader side)
+// registerPendingCall / resolvePendingCall / rejectPendingCall
+// registerPendingProvision / resolvePendingProvision / rejectPendingProvision</code></pre>
+      </div>
+
+      <div class="file">
+        <div class="file-head">apps/agent-brain/src/result-consumer.ts</div>
+        <pre><code>export function startResultConsumer() {
+  const worker = new Worker(QUEUE_NAMES.sandboxToAgent, async (job) =&gt; {
+    const data = job.data;
+
+    if (data.type === "provision_result") {
+      resolvePendingProvision(data.commandId, {
+        sandboxId, sandboxPath, cloned, error,
+      });
+      return;
+    }
+
+    // everything else is a command result
+    resolvePendingCall(data.commandId, { output, exitCode, error });
+  }, { connection: redisConnection });
+
+  // Safety net: if BullMQ reports the job failed (worker crashed before replying),
+  // reject the pending promise instead of letting it hang.
+  worker.on("failed", (job, err) =&gt; {
+    const data = job?.data;
+    if (!data?.commandId) return;
+    if (data.type === "provision_result") {
+      rejectPendingProvision(data.commandId, err);
+      return;
+    }
+    rejectPendingCall(data.commandId, err);
+  });
+
+  return worker;
+}</code></pre>
+      </div>
+
+      <h2 id="reference">Function Reference — Who Calls What</h2>
+      <table>
+        <thead>
+          <tr><th>Function (pending-calls.ts)</th><th>Called by</th><th>When</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>registerPendingCall</code></td>
+            <td><code>bullmq-sandbox-client.ts</code> (<code>call</code>)</td>
+            <td>Every command request, before enqueueing</td>
+          </tr>
+          <tr>
+            <td><code>resolvePendingCall</code></td>
+            <td><code>result-consumer.ts</code></td>
+            <td>A <code>result</code> message arrives on <code>sandbox-to-agent</code></td>
+          </tr>
+          <tr>
+            <td><code>rejectPendingCall</code></td>
+            <td><code>bullmq-sandbox-client.ts</code> <em>and</em> <code>result-consumer.ts</code></td>
+            <td>120s timeout, <code>queue.add</code> failure, or worker job failure</td>
+          </tr>
+          <tr>
+            <td><code>registerPendingProvision</code></td>
+            <td><code>bullmq-sandbox-client.ts</code> (<code>provision</code>)</td>
+            <td>Every provisioning (clone) request</td>
+          </tr>
+          <tr>
+            <td><code>resolvePendingProvision</code></td>
+            <td><code>result-consumer.ts</code></td>
+            <td>A <code>provision_result</code> message arrives</td>
+          </tr>
+          <tr>
+            <td><code>rejectPendingProvision</code></td>
+            <td>same as <code>rejectPendingCall</code> (provision variant)</td>
+            <td>timeout / enqueue failure / worker failure</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The <code>provision*</code> functions are the identical mechanism but for the
+        <strong>clone-a-repo</strong> request (triggered by the graph’s <code>prepare-sandbox</code> node calling
+        <code>deps.sandboxClient.provision(...)</code>) instead of a file/shell command.
+      </p>
+
+      <h2 id="failures">Failures &amp; Timeouts</h2>
+      <p>There are three independent safety nets. Together they guarantee the agent never hangs forever.</p>
+      <table>
+        <thead>
+          <tr><th>Scenario</th><th>Guard</th><th>Result</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Worker crashes before replying (job marked failed)</td>
+            <td><code>worker.on("failed")</code> in <code>result-consumer.ts</code></td>
+            <td><span class="badge red">reject</span> pending promise immediately with the real error</td>
+          </tr>
+          <tr>
+            <td>Job disappears silently / never answers</td>
+            <td>120s <code>setTimeout</code> in <code>bullmq-sandbox-client.ts</code></td>
+            <td><span class="badge red">reject</span> with “Sandbox timeout”</td>
+          </tr>
+          <tr>
+            <td>Redis enqueue itself fails</td>
+            <td><code>queue.add(...).catch(...)</code> in the client</td>
+            <td><span class="badge red">reject</span> immediately with the enqueue error</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="note">
+        Note: <code>resolve()</code>/<code>reject()</code> return <code>false</code> when the id is no longer in the
+        map (already answered or already timed out). This makes the guards idempotent — the first one to fire wins,
+        the rest are harmless no-ops.
+      </div>
+
+      <h2 id="why-separate">Why Is <code>pending-calls.ts</code> a Separate File?</h2>
+      <ul>
+        <li>The <strong>writer</strong> (<code>bullmq-sandbox-client.ts</code>) only knows how to create requests.</li>
+        <li>The <strong>reader</strong> (<code>result-consumer.ts</code>) only knows how to consume replies.</li>
+        <li>Both need access to the same in-memory <code>Map</code>, but importing each other would create a cycle.</li>
+      </ul>
+      <p>
+        So the map lives in its own module, and both import from it. It is <strong>not</strong> a cache or a
+        database — purely in-memory, one-shot, and lost if the agent-brain process restarts (which is fine, because a
+        restart also destroys the awaiting Promises).
+      </p>
+
+      <h2 id="runtime">When Does This Actually Run?</h2>
+      <ol>
+        <li><code>sandbox-worker</code> must be running (<code>bun run src/main.ts</code>) to receive
+          <code>agent-to-sandbox</code> jobs.</li>
+        <li><code>agent-brain</code> must be running as the LangGraph server (<code>langgraphjs dev</code>) so
+          <code>graph.ts</code> boots <code>startResultConsumer()</code>.</li>
+        <li>A user sends a message in the web UI →
+          <code>apps/web/app/api/threads/[threadId]/run/route.ts</code> →
+          <code>apps/web/app/lib/agent-brain.ts</code> (<code>client.runs.create(...)</code>, LangGraph SDK over HTTP)
+          → the graph runs → <code>prepare-sandbox</code> provisions, tools issue commands → every command flows
+          through this round-trip.</li>
+      </ol>
+
+      <div class="diagram">web UI
+  │ POST /api/threads/:id/run   (auth + thread check + install token)
+  ▼
+apps/web/lib/agent-brain.ts  →  LangGraph SDK: client.runs.create(threadId, "coding", { input, config })
+  ▼
+agent-brain (LangGraph server) — graph.ts boots result-consumer
+  ▼
+graph: prepare-sandbox → create-empty-pr → generate-action ⇄ take-action → open-pull-request → end
+          │ provision()               │ tools call()
+          ▼                            ▼
+     bullmq-sandbox-client  ◀── result-consumer (resolves)
+          │ queue.add                   ▲ worker
+          ▼                             │
+      agent-to-sandbox ──▶ sandbox-worker ──▶ sandbox-to-agent
+             (Redis)          (executor.ts)     (Redis)</div>
+
+      <h2 id="summary">Key Takeaways</h2>
+      <ul>
+        <li>
+          <code>pending-calls.ts</code> is a <strong>shared in-memory registry</strong> mapping
+          <code class="accent">commandId → awaiting Promise</code>. It is the bridge between the request
+          (<code>bullmq-sandbox-client.ts</code>) and the reply (<code>result-consumer.ts</code>).
+        </li>
+        <li>
+          <code>result-consumer.ts</code> is a BullMQ <strong>Worker</strong> that watches
+          <code>sandbox-to-agent</code> and resolves the matching Promise, plus a <code>failed</code> handler that
+          rejects on worker crashes.
+        </li>
+        <li>The two processes never share memory — the <code class="accent">commandId</code> is the only link.</li>
+        <li>Everything is one-shot and idempotent: the first resolve/reject wins.</li>
+        <li>These files are used <strong>only</strong> inside <code>apps/agent-brain</code> and are wired together in
+          <code>src/graph.ts</code>.</li>
+      </ul>
+    </main>
+  </div>
+</body>
+</html>
