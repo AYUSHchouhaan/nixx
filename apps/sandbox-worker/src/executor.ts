@@ -1,6 +1,5 @@
-import { spawn } from "node:child_process";
-import fs from "node:fs/promises";
 import path from "node:path";
+import type { Sandbox } from "@daytonaio/sdk";
 
 export type SandboxCommandName =
   | "read_file"
@@ -17,13 +16,32 @@ export interface SandboxExecutionResult {
   error?: string;
 }
 
-async function readFiles(root: string, filePaths: string[]): Promise<string> {
+function toPosix(p: string): string {
+  return p.replace(/\\/g, "/");
+}
+
+function absolutePath(repoDir: string, filePath: string): string {
+  return path.posix.join(repoDir, toPosix(String(filePath)));
+}
+
+function stripRepoPrefix(repoDir: string, filePath: string): string {
+  const prefix = `${repoDir}/`;
+  const normalized = toPosix(filePath);
+  return normalized.startsWith(prefix) ? normalized.slice(prefix.length) : normalized;
+}
+
+async function readFiles(
+  sandbox: Sandbox,
+  repoDir: string,
+  filePaths: string[],
+): Promise<string> {
   const results = await Promise.all(
     filePaths.slice(0, 10).map(async (filePath) => {
       try {
-        const fullPath = path.join(root, String(filePath));
-        const content = await fs.readFile(fullPath, "utf-8");
-        return `=== ${filePath} ===\n${content}`;
+        const content = await sandbox.fs.downloadFile(
+          absolutePath(repoDir, String(filePath)),
+        );
+        return `=== ${filePath} ===\n${content.toString("utf-8")}`;
       } catch (error) {
         return `=== ${filePath} ===\nError reading file: ${
           error instanceof Error ? error.message : String(error)
@@ -34,101 +52,70 @@ async function readFiles(root: string, filePaths: string[]): Promise<string> {
   return results.join("\n\n");
 }
 
-async function globFiles(root: string, patterns: string[]): Promise<string> {
+async function globFiles(
+  sandbox: Sandbox,
+  repoDir: string,
+  patterns: string[],
+): Promise<string> {
   const files = new Set<string>();
 
-  async function walk(dir: string): Promise<void> {
-    const entries = await fs.readdir(dir, { withFileTypes: true });
-    for (const entry of entries) {
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        if (
-          ["node_modules", ".git", ".next", "dist", "build", ".turbo"].includes(
-            entry.name,
-          )
-        ) {
-          continue;
-        }
-        await walk(full);
-      } else {
-        const rel = path.relative(root, full).replace(/\\/g, "/");
-        files.add(rel);
+  for (const pattern of patterns) {
+    try {
+      const result = await sandbox.fs.searchFiles(repoDir, String(pattern));
+      for (const file of result.files) {
+        files.add(stripRepoPrefix(repoDir, file));
       }
+    } catch {
+      // Ignore per-pattern failures and report on the union of what was found.
     }
   }
 
-  await walk(root);
-
-  const matched = [...files].filter((file) =>
-    patterns.some((pattern) => {
-      const regex = new RegExp(
-        "^" +
-          pattern
-            .replace(/\./g, "\\.")
-            .replace(/\*\*/g, "§")
-            .replace(/\*/g, "[^/]*")
-            .replace(/§/g, ".*") +
-          "$",
-      );
-      return regex.test(file);
-    }),
-  );
-
+  const matched = [...files];
   return matched.length
     ? `files matching:\n${matched.join("\n")}`
     : `No files found matching: ${patterns.join(", ")}`;
 }
 
-async function grepFiles(root: string, query: string): Promise<string> {
-  const matches: string[] = [];
-  const needle = String(query).toLowerCase();
-
-  async function walk(dir: string): Promise<void> {
-    const entries = await fs.readdir(dir, { withFileTypes: true });
-    for (const entry of entries) {
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        if (
-          ["node_modules", ".git", ".next", "dist", "build", ".turbo"].includes(
-            entry.name,
-          )
-        ) {
-          continue;
-        }
-        await walk(full);
-      } else {
-        const content = await fs.readFile(full, "utf-8").catch(() => "");
-        if (content.toLowerCase().includes(needle)) {
-          matches.push(path.relative(root, full).replace(/\\/g, "/"));
-        }
-      }
-    }
-  }
-
-  await walk(root);
-
-  const files = matches.slice(0, 5);
+async function grepFiles(
+  sandbox: Sandbox,
+  repoDir: string,
+  query: string,
+): Promise<string> {
+  const matches = await sandbox.fs.findFiles(repoDir, String(query));
+  const files = [...new Set(matches.map((m) => stripRepoPrefix(repoDir, m.file)))].slice(
+    0,
+    5,
+  );
   return files.length
     ? `Found ${files.length} file(s) matching "${query}":\n${files.join("\n")}`
     : `No files found matching "${query}".`;
 }
 
-async function createFile(root: string, filePath: string, content: string): Promise<string> {
+async function createFile(
+  sandbox: Sandbox,
+  repoDir: string,
+  filePath: string,
+  content: string,
+): Promise<string> {
   try {
-    const fullPath = path.join(root, String(filePath));
+    const fullPath = absolutePath(repoDir, filePath);
 
-    const exists = await fs
-      .access(fullPath)
-      .then(() => true)
-      .catch(() => false);
+    let exists = false;
+    try {
+      await sandbox.fs.getFileDetails(fullPath);
+      exists = true;
+    } catch {
+      exists = false;
+    }
 
     if (exists) {
       return `Error: "${filePath}" already exists. Use the "edit" tool to modify existing files.`;
     }
 
-    const dir = path.dirname(fullPath);
-    await fs.mkdir(dir, { recursive: true });
-    await fs.writeFile(fullPath, String(content), "utf-8");
+    const parentDir = path.posix.dirname(fullPath);
+    await sandbox.process.executeCommand(`mkdir -p "${parentDir}"`);
+
+    await sandbox.fs.uploadFile(Buffer.from(String(content), "utf-8"), fullPath);
     return `Created new file "${filePath}" successfully.`;
   } catch (error) {
     return `Error creating "${filePath}": ${
@@ -138,16 +125,18 @@ async function createFile(root: string, filePath: string, content: string): Prom
 }
 
 async function editFile(
-  root: string,
+  sandbox: Sandbox,
+  repoDir: string,
   filePath: string,
   edits: Array<{ oldStr: string; newStr: string }>,
 ): Promise<string> {
   try {
-    const fullPath = path.join(root, String(filePath));
+    const fullPath = absolutePath(repoDir, filePath);
 
     let content: string;
     try {
-      content = await fs.readFile(fullPath, "utf-8");
+      const buffer = await sandbox.fs.downloadFile(fullPath);
+      content = buffer.toString("utf-8");
     } catch {
       return `Error: "${filePath}" does not exist. Use the "create_file" tool to create new files.`;
     }
@@ -173,7 +162,7 @@ async function editFile(
       content = content.replace(oldStr, newStr);
     }
 
-    await fs.writeFile(fullPath, content, "utf-8");
+    await sandbox.fs.uploadFile(Buffer.from(content, "utf-8"), fullPath);
     return `Successfully applied ${edits.length} edit(s) to "${filePath}".`;
   } catch (error) {
     return `Error editing "${filePath}": ${
@@ -182,106 +171,66 @@ async function editFile(
   }
 }
 
-async function runGit(
-  root: string,
-  args: string[],
+async function runCommand(
+  sandbox: Sandbox,
+  repoDir: string,
+  command: string,
 ): Promise<SandboxExecutionResult> {
-  return new Promise((resolve) => {
-    const child = spawn("git", args, {
-      cwd: root,
-      windowsHide: true,
-    });
-
-    let stdout = "";
-    let stderr = "";
-
-    child.stdout?.on("data", (d: Buffer) => {
-      stdout += d.toString("utf8");
-    });
-    child.stderr?.on("data", (d: Buffer) => {
-      stderr += d.toString("utf8");
-    });
-
-    child.on("error", (err) => {
-      resolve({
-        output: `git spawn error: ${err.message}`,
-        exitCode: 1,
-        error: err.message,
-      });
-    });
-
-    child.on("exit", (code) => {
-      resolve({
-        output: [stdout.trim(), stderr.trim()].filter(Boolean).join("\n"),
-        exitCode: code ?? 1,
-      });
-    });
-  });
+  try {
+    const response = await sandbox.process.executeCommand(String(command), repoDir);
+    return {
+      output: response.result ?? "",
+      exitCode: response.exitCode ?? 0,
+    };
+  } catch (error) {
+    return {
+      output: `run_command error: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      exitCode: 1,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
 }
 
-function runCommand(root: string, command: string): Promise<SandboxExecutionResult> {
-  return new Promise((resolve) => {
-    const shell = process.platform === "win32" ? "powershell.exe" : "/bin/sh";
-    const child = spawn(String(command), {
-      cwd: root,
-      shell,
-    });
-
-    let stdout = "";
-    let stderr = "";
-
-    child.stdout?.on("data", (d: Buffer) => {
-      stdout += d.toString("utf8");
-    });
-    child.stderr?.on("data", (d: Buffer) => {
-      stderr += d.toString("utf8");
-    });
-
-    child.on("error", (err) => {
-      resolve({
-        output: `spawn error: ${err.message}`,
-        exitCode: 1,
-        error: err.message,
-      });
-    });
-
-    child.on("exit", (code, signal) => {
-      const parts: string[] = [];
-      if (stdout.trim()) parts.push(`stdout:\n${stdout.trim()}`);
-      if (stderr.trim()) parts.push(`stderr:\n${stderr.trim()}`);
-      parts.push(`exitCode: ${code ?? "null"}${signal ? `, signal: ${signal}` : ""}`);
-      resolve({ output: parts.join("\n\n"), exitCode: code ?? 1 });
-    });
-  });
+async function runGit(
+  sandbox: Sandbox,
+  repoDir: string,
+  args: string[],
+): Promise<SandboxExecutionResult> {
+  const command = ["git", ...args].join(" ");
+  return runCommand(sandbox, repoDir, command);
 }
 
 export async function executeSandboxCommand(
-  root: string,
+  sandbox: Sandbox,
+  repoDir: string,
   command: string,
   args: Record<string, unknown>,
 ): Promise<SandboxExecutionResult> {
   switch (command) {
     case "read_file":
       return {
-        output: await readFiles(root, (args.filePaths as string[]) ?? []),
+        output: await readFiles(sandbox, repoDir, (args.filePaths as string[]) ?? []),
         exitCode: 0,
       };
     case "glob":
       return {
-        output: await globFiles(root, (args.patterns as string[]) ?? []),
+        output: await globFiles(sandbox, repoDir, (args.patterns as string[]) ?? []),
         exitCode: 0,
       };
     case "grep":
       return {
-        output: await grepFiles(root, String(args.query ?? "")),
+        output: await grepFiles(sandbox, repoDir, String(args.query ?? "")),
         exitCode: 0,
       };
     case "run_command":
-      return runCommand(root, String(args.command ?? ""));
+      return runCommand(sandbox, repoDir, String(args.command ?? ""));
     case "create_file":
       return {
         output: await createFile(
-          root,
+          sandbox,
+          repoDir,
           String(args.filePath ?? ""),
           String(args.content ?? ""),
         ),
@@ -290,14 +239,15 @@ export async function executeSandboxCommand(
     case "edit_file":
       return {
         output: await editFile(
-          root,
+          sandbox,
+          repoDir,
           String(args.filePath ?? ""),
           (args.edits as Array<{ oldStr: string; newStr: string }>) ?? [],
         ),
         exitCode: 0,
       };
     case "git":
-      return runGit(root, (args.args as string[]) ?? []);
+      return runGit(sandbox, repoDir, (args.args as string[]) ?? []);
     default:
       return {
         output: "",
