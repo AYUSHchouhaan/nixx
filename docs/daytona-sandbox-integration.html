@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nixx — Daytona Sandbox Integration</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --panel-2: #1e222c;
+      --border: #2a2f3a;
+      --text: #e6e8ee;
+      --muted: #9aa3b2;
+      --accent: #4f8cff;
+      --accent-2: #7c5cff;
+      --code-bg: #12151b;
+      --green: #3fb68b;
+      --amber: #e0a458;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .wrap {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 28px 20px;
+      border-right: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    aside h1 {
+      font-size: 18px;
+      margin: 0 0 6px;
+      letter-spacing: -0.02em;
+    }
+
+    aside .sub {
+      color: var(--muted);
+      font-size: 13px;
+      margin: 0 0 24px;
+    }
+
+    aside nav a {
+      display: block;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      margin-bottom: 2px;
+    }
+
+    aside nav a:hover {
+      color: var(--text);
+      background: var(--panel-2);
+    }
+
+    main {
+      padding: 40px 56px 80px;
+      max-width: 960px;
+    }
+
+    h2 {
+      font-size: 24px;
+      letter-spacing: -0.02em;
+      margin: 48px 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h3 {
+      font-size: 18px;
+      margin: 28px 0 10px;
+    }
+
+    p {
+      color: #cdd2dc;
+      margin: 10px 0;
+    }
+
+    code {
+      background: var(--code-bg);
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+      font-size: 13px;
+      color: #d7e0ff;
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      color: #d7e0ff;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13.5px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      background: var(--panel-2);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(79, 140, 255, 0.14);
+      color: #9dbdff;
+    }
+
+    .badge.green {
+      background: rgba(63, 182, 139, 0.14);
+      color: #8fe0c2;
+    }
+
+    .badge.amber {
+      background: rgba(224, 164, 88, 0.14);
+      color: #ecc68a;
+    }
+
+    .diagram {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      overflow-x: auto;
+      font-family: ui-monospace, "Cascadia Code", monospace;
+      font-size: 12.5px;
+      color: #aeb6c4;
+      white-space: pre;
+    }
+
+    .note {
+      border-left: 3px solid var(--amber);
+      background: rgba(224, 164, 88, 0.08);
+      padding: 10px 14px;
+      border-radius: 0 10px 10px 0;
+      margin: 16px 0;
+      color: #e6c99c;
+    }
+
+    .accent {
+      color: var(--accent);
+    }
+
+    @media (max-width: 800px) {
+      .wrap {
+        grid-template-columns: 1fr;
+      }
+
+      aside {
+        position: static;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      main {
+        padding: 24px 20px 60px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <aside>
+      <h1>Nixx</h1>
+      <p class="sub">Daytona Sandbox Integration</p>
+      <nav>
+        <a href="#overview">Overview</a>
+        <a href="#before">Before &amp; After</a>
+        <a href="#files">Files Changed</a>
+        <a href="#daytona">daytona.ts</a>
+        <a href="#provision">provision.ts</a>
+        <a href="#executor">executor.ts</a>
+        <a href="#main">main.ts</a>
+        <a href="#env">Environment</a>
+        <a href="#contract">Contract Impact</a>
+        <a href="#run">Running</a>
+        <a href="#verify">Verification</a>
+      </nav>
+    </aside>
+
+    <main>
+      <h2 id="overview">Overview</h2>
+      <p>
+        The sandbox worker no longer executes on the local filesystem. It now provisions and
+        drives real <strong>Daytona</strong> sandboxes through the
+        <code>@daytonaio/sdk</code> package. Every agent run gets an isolated remote sandbox,
+        the repository is cloned inside it, and all read / search / shell / file-mutation
+        commands run against that sandbox.
+      </p>
+
+      <div class="diagram">┌─────────────────────┐   Queue A (BullMQ/Redis)   ┌──────────────────────┐
+│     agent-brain      │  agent-to-sandbox           │    sandbox-worker     │
+│  (LangGraph + HTTP)  │ ───────────────────────────▶│  (Daytona SDK client) │
+│                      │                             │                       │
+│  SandboxClient       │ ◀───────────────────────────│  Daytona API          │
+│  (await result)      │   sandbox-to-agent          │        │              │
+└─────────────────────┘        Queue B               └────────┼──────────────┘
+         ▲                                                      ▼
+         │ HTTP POST /run                            ┌─────────────────────┐
+┌─────────────────────┐                              │   Daytona sandbox    │
+│        web           │                             │  /home/daytona/<id>  │
+│  (Next.js backend)   │                             │  git clone + exec    │
+└─────────────────────┘                              └─────────────────────┘</div>
+
+      <p>
+        Only <code>apps/sandbox-worker</code> changed. The agent graph, <code>agent-brain</code>,
+        <code>web</code>, and the <code>@repo/contracts</code> message contract are untouched.
+      </p>
+
+      <h2 id="before">Before &amp; After</h2>
+      <table>
+        <thead>
+          <tr><th></th><th>Before</th><th>After</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Provisioning</strong></td>
+            <td>Local <code>git clone</code> into <code>&lt;SANDBOX_ROOT&gt;/&lt;sandboxId&gt;</code></td>
+            <td><code>daytona.create</code> / <code>daytona.get</code>, then <code>sandbox.git.clone</code> into <code>/home/daytona/&lt;sandboxId&gt;</code></td>
+          </tr>
+          <tr>
+            <td><strong>Execution</strong></td>
+            <td>Node <code>fs</code> + <code>spawn</code> on local disk</td>
+            <td><code>sandbox.fs</code> + <code>sandbox.process</code> against the remote sandbox</td>
+          </tr>
+          <tr>
+            <td><strong>Isolation</strong></td>
+            <td>None (shared local directory)</td>
+            <td>Isolated Daytona sandbox, auto-stop after 15 min idle + delete on stop</td>
+          </tr>
+          <tr>
+            <td><strong>Config</strong></td>
+            <td><code>SANDBOX_ROOT</code></td>
+            <td><code>DAYTONA_API_KEY</code> (required)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="note">
+        Decision: <strong>full Daytona</strong>. There is no local-filesystem fallback — the
+        worker requires <code>DAYTONA_API_KEY</code> and exits on startup if it is missing.
+      </div>
+
+      <h2 id="files">Files Changed</h2>
+      <p>All changes are confined to <code>apps/sandbox-worker</code>.</p>
+      <table>
+        <thead>
+          <tr><th>File</th><th>Change</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>src/daytona.ts</code></td><td>Filled empty stub with the singleton client + shared constants</td></tr>
+          <tr><td><code>src/provision.ts</code></td><td>Rewrote local clone → Daytona provisioning</td></tr>
+          <tr><td><code>src/executor.ts</code></td><td>Repointed helpers at <code>sandbox.fs</code> / <code>sandbox.process</code> / <code>sandbox.git</code></td></tr>
+          <tr><td><code>src/main.ts</code></td><td>Wired new seams, added <code>dotenv/config</code> and API-key guard</td></tr>
+          <tr><td><code>package.json</code></td><td>Added <code>dotenv</code> dependency</td></tr>
+          <tr><td><code>.env.example</code></td><td>Added Daytona + Redis env reference</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="daytona">daytona.ts</h2>
+      <p>The singleton client and shared constants live here.</p>
+      <pre><code>import { Daytona } from "@daytonaio/sdk";
+import type { CreateSandboxFromSnapshotParams } from "@daytonaio/sdk";
+
+export const DAYTONA_IMAGE_NAME = "daytonaio/langchain-open-swe:0.1.0";
+export const DAYTONA_SNAPSHOT_NAME = "open-swe-vcpu2-mem4-disk5";
+export const SANDBOX_ROOT_DIR = "/home/daytona";
+
+export const DEFAULT_SANDBOX_CREATE_PARAMS: CreateSandboxFromSnapshotParams = {
+  user: "daytona",
+  snapshot: DAYTONA_SNAPSHOT_NAME,
+  autoStopInterval: 15,
+  autoDeleteInterval: 0,
+};
+
+let daytonaInstance: Daytona | null = null;
+
+export function daytonaClient(): Daytona {
+  if (!daytonaInstance) {
+    daytonaInstance = new Daytona();
+  }
+  return daytonaInstance;
+}</code></pre>
+      <p>
+        <code>new Daytona()</code> reads <code>DAYTONA_API_KEY</code> (and optional
+        <code>DAYTONA_API_URL</code> / <code>DAYTONA_TARGET</code>) from the environment.
+      </p>
+
+      <h2 id="provision">provision.ts</h2>
+      <p>
+        Keeps the same <code>SandboxProvisionResult</code> contract and the
+        <code>https://github.com</code> URL guard, but provisions through Daytona.
+      </p>
+      <pre><code>const sandboxRegistry = new Map&lt;string, Sandbox&gt;();
+
+function sandboxName(sandboxId: string): string {
+  return `nixx-${sandboxId}`;
+}
+
+export function repoPath(sandboxId: string): string {
+  return path.posix.join(SANDBOX_ROOT_DIR, sandboxId);
+}
+
+export async function getSandbox(sandboxId: string): Promise&lt;Sandbox&gt; {
+  const cached = sandboxRegistry.get(sandboxId);
+  if (cached) return cached;
+
+  const sandbox = await daytonaClient().get(sandboxName(sandboxId));
+  sandboxRegistry.set(sandboxId, sandbox);
+  return sandbox;
+}</code></pre>
+      <p>Provisioning flow:</p>
+      <ol>
+        <li>Reject non-GitHub HTTPS URLs.</li>
+        <li><code>daytona.get(name)</code>; on not-found, <code>daytona.create({ ...params, name })</code>.</li>
+        <li>Check whether the repo is already present via <code>sandbox.fs.listFiles</code>.</li>
+        <li>If absent, shallow-clone with the installation token.</li>
+        <li>Persist git auth + author identity so the later PR push works.</li>
+      </ol>
+      <pre><code>await sandbox.git.clone(
+  input.repoUrl,
+  sandboxDir,
+  input.branch,
+  undefined,
+  "x-access-token",
+  input.installationToken,
+  false,
+  1,
+);
+
+await sandbox.git.setConfig(
+  "http.extraheader",
+  `AUTHORIZATION: basic ${auth}`,
+  "local",
+  sandboxDir,
+);
+await sandbox.git.configureUser("Nixx", "noreply@nixx.dev", "local", sandboxDir);
+await sandbox.git.setConfig("commit.gpgsign", "false", "local", sandboxDir);</code></pre>
+
+      <h2 id="executor">executor.ts</h2>
+      <p>
+        The signature changed from <code>executeSandboxCommand(root, ...)</code> to
+        <code>executeSandboxCommand(sandbox, repoDir, ...)</code>. Output strings and error
+        formats are preserved so the agent sees the same results.
+      </p>
+      <table>
+        <thead>
+          <tr><th>Command</th><th>New implementation</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>read_file</code></td><td><code>sandbox.fs.downloadFile</code> → <code>toString("utf-8")</code></td></tr>
+          <tr><td><code>glob</code></td><td><code>sandbox.fs.searchFiles</code>, union results, strip <code>repoDir/</code> prefix</td></tr>
+          <tr><td><code>grep</code></td><td><code>sandbox.fs.findFiles</code>, unique file paths, slice to 5</td></tr>
+          <tr><td><code>run_command</code></td><td><code>sandbox.process.executeCommand(command, repoDir)</code></td></tr>
+          <tr><td><code>create_file</code></td><td><code>mkdir -p</code> parent, then <code>sandbox.fs.uploadFile</code></td></tr>
+          <tr><td><code>edit_file</code></td><td><code>downloadFile</code> → apply ordered replacements → <code>uploadFile</code></td></tr>
+          <tr><td><code>git</code></td><td><code>sandbox.process.executeCommand("git ...", repoDir)</code> passthrough</td></tr>
+        </tbody>
+      </table>
+
+      <div class="note">
+        <code>git</code> stays a shell passthrough. Daytona's <code>Git</code> API has no
+        <code>fetch</code>, and the agent sends free-form args (<code>fetch origin &lt;branch&gt;</code>,
+        <code>add -A -- :!node_modules ...</code>, <code>commit --allow-empty</code>, etc.) that
+        must be forwarded verbatim.
+      </div>
+
+      <h2 id="main">main.ts</h2>
+      <pre><code>import "dotenv/config";
+
+if (!process.env.DAYTONA_API_KEY) {
+  console.error("DAYTONA_API_KEY is required");
+  process.exit(1);
+}
+
+// provision job
+const result = await provisionSandbox({
+  sandboxId: data.sandboxId,
+  repoUrl: data.repoUrl,
+  branch: data.branch,
+  installationToken: data.installationToken,
+});
+
+// command job
+const sandbox = await getSandbox(data.sandboxId);
+const result = await executeSandboxCommand(
+  sandbox,
+  repoPath(data.sandboxId),
+  data.command,
+  data.args,
+);</code></pre>
+
+      <h2 id="env">Environment Variables</h2>
+      <table>
+        <thead>
+          <tr><th>Variable</th><th>Required</th><th>Default</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>DAYTONA_API_KEY</code></td><td><span class="badge amber">required</span></td><td>—</td></tr>
+          <tr><td><code>DAYTONA_API_URL</code></td><td>no</td><td><code>https://app.daytona.io/api</code></td></tr>
+          <tr><td><code>DAYTONA_TARGET</code></td><td>no</td><td>—</td></tr>
+          <tr><td><code>REDIS_HOST</code></td><td>no</td><td><code>localhost</code></td></tr>
+          <tr><td><code>REDIS_PORT</code></td><td>no</td><td><code>6379</code></td></tr>
+        </tbody>
+      </table>
+      <p>Reference file: <code>apps/sandbox-worker/.env.example</code>.</p>
+
+      <h2 id="contract">Contract Impact</h2>
+      <p>
+        None. <code>SandboxProvisionResult.sandboxPath</code> now carries a remote path such as
+        <code>/home/daytona/&lt;sandboxId&gt;</code> instead of a local one. It is informational
+        only — the agent checks <code>result.error</code>, not the path.
+      </p>
+      <p>
+        <code>SandboxClient</code>, <code>BullMqSandboxClient</code>, queue messages, graph nodes,
+        and agent tools all remain unchanged.
+      </p>
+
+      <h2 id="run">Running the System</h2>
+      <pre><code># install
+bun install
+
+# set the Daytona key in apps/sandbox-worker/.env
+# DAYTONA_API_KEY=...
+
+# start Redis, then run these in separate terminals:
+
+# 1. sandbox worker
+bun run dev --filter=sandbox-worker
+
+# 2. agent brain
+bun run dev --filter=agent-brain
+
+# 3. web (primary backend)
+bun run dev --filter=web</code></pre>
+
+      <h2 id="verify">Verification</h2>
+      <ul>
+        <li>All packages typecheck with <code>bun run check-types</code>.</li>
+        <li>Trigger <code>POST /api/threads/:threadId/run</code> with a real repo URL.</li>
+        <li>Confirm the repo is cloned into a fresh Daytona sandbox.</li>
+        <li>Confirm <code>read</code> / <code>glob</code> / <code>grep</code> / <code>run</code> / <code>create_file</code> / <code>edit_file</code> return correct results.</li>
+        <li>Confirm the PR flow succeeds — proof that clone-time git auth persisted into the sandbox.</li>
+        <li>Confirm a second run against the same <code>sandboxId</code> reuses the sandbox without re-cloning.</li>
+      </ul>
+    </main>
+  </div>
+</body>
+</html>
