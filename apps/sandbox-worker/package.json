@@ -9,8 +9,10 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@daytonaio/sdk": "^0.205.1",
     "@repo/contracts": "*",
-    "bullmq": "^5.34.4"
+    "bullmq": "^5.34.4",
+    "dotenv": "^17.4.2"
   },
   "devDependencies": {
     "@types/bun": "latest",
