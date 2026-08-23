@@ -1,28 +1,8 @@
-import { createSign } from "node:crypto";
+import { createAppAuth } from "@octokit/auth-app";
+import { Octokit } from "@octokit/rest";
 import { db } from "@repo/db";
 import { accounts } from "@repo/db/schema";
 import { eq } from "drizzle-orm";
-
-const GITHUB_API = "https://api.github.com";
-
-function base64url(input: string | Buffer) {
-  return Buffer.from(input).toString("base64url");
-}
-
-function signJwt(payload: object, privateKey: string) {
-  const header = { alg: "RS256", typ: "JWT" };
-  const now = Math.floor(Date.now() / 1000);
-
-  const unsigned = `${base64url(JSON.stringify(header))}.${base64url(
-    JSON.stringify({ iat: now, exp: now + 60, ...payload }),
-  )}`;
-
-  const signature = createSign("RSA-SHA256")
-    .update(unsigned)
-    .sign(privateKey, "base64url");
-
-  return `${unsigned}.${signature}`;
-}
 
 function getAppCredentials() {
   const appId = process.env.GITHUB_APP_ID;
@@ -39,28 +19,8 @@ function getAppCredentials() {
 
 export async function getInstallationId(userAccessToken: string) {
   const { appId } = getAppCredentials();
-
-  const response = await fetch(`${GITHUB_API}/user/installations`, {
-    headers: {
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${userAccessToken}`,
-      "X-GitHub-Api-Version": "2022-11-28",
-    },
-  });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(
-      `GitHub user installations request failed (${response.status}): ${body}`,
-    );
-  }
-
-  const data = (await response.json()) as {
-    installations: Array<{
-      id: number;
-      app_id: number;
-    }>;
-  };
+  const octokit = new Octokit({ auth: userAccessToken });
+  const { data } = await octokit.rest.apps.listInstallationsForAuthenticatedUser();
 
   const installation = data.installations.find(
     (item) => String(item.app_id) === appId,
@@ -89,8 +49,15 @@ export async function getAccessToken(userId: string) {
   return account.accessToken;
 }
 
+export async function verifyGitHubUser(userAccessToken: string) {
+  const octokit = new Octokit({ auth: userAccessToken });
+  const { data } = await octokit.rest.users.getAuthenticated();
+  return data;
+}
+
 export async function getInstallationToken(userId: string) {
   const accessToken = await getAccessToken(userId);
+  await verifyGitHubUser(accessToken);
   const installationId = await getInstallationId(accessToken);
   const { token, expiresAt } = await createInstallationToken(installationId);
   return { installationId, token, expiresAt };
@@ -100,31 +67,12 @@ export async function createInstallationToken(
   installationId: number | string,
 ) {
   const { appId, privateKey } = getAppCredentials();
-  const jwt = signJwt({ iss: appId }, privateKey);
-
-  const response = await fetch(
-    `${GITHUB_API}/app/installations/${installationId}/access_tokens`,
-    {
-      method: "POST",
-      headers: {
-        Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${jwt}`,
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
-    },
-  );
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(
-      `GitHub installation token request failed (${response.status}): ${body}`,
-    );
-  }
-
-  const data = (await response.json()) as {
-    token: string;
-    expires_at: string;
-  };
+  const appAuth = createAppAuth({ appId, privateKey });
+  const { token: appToken } = await appAuth({ type: "app" });
+  const octokit = new Octokit({ auth: appToken });
+  const { data } = await octokit.rest.apps.createInstallationAccessToken({
+    installation_id: Number(installationId),
+  });
 
   return {
     token: data.token,
@@ -133,33 +81,8 @@ export async function createInstallationToken(
 }
 
 export async function fetchRepositories(installationToken: string) {
-  const response = await fetch(`${GITHUB_API}/installation/repositories`, {
-    headers: {
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${installationToken}`,
-      "X-GitHub-Api-Version": "2022-11-28",
-    },
-  });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(
-      `GitHub repositories request failed (${response.status}): ${body}`,
-    );
-  }
-
-  const data = (await response.json()) as {
-    repositories: Array<{
-      id: number;
-      name: string;
-      full_name: string;
-      private: boolean;
-      default_branch: string;
-      html_url: string;
-    }>;
-  };
-
-  return data.repositories;
+  const octokit = new Octokit({ auth: installationToken });
+  return octokit.paginate(octokit.rest.apps.listReposAccessibleToInstallation);
 }
 
 export async function fetchBranches(
@@ -167,28 +90,9 @@ export async function fetchBranches(
   owner: string,
   repo: string,
 ) {
-  const response = await fetch(
-    `${GITHUB_API}/repos/${owner}/${repo}/branches`,
-    {
-      headers: {
-        Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${installationToken}`,
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
-    },
-  );
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(
-      `GitHub branches request failed (${response.status}): ${body}`,
-    );
-  }
-
-  const data = (await response.json()) as Array<{
-    name: string;
-    protected: boolean;
-  }>;
-
-  return data;
+  const octokit = new Octokit({ auth: installationToken });
+  return octokit.paginate(octokit.rest.repos.listBranches, {
+    owner,
+    repo,
+  });
 }
