@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Worker } from "bullmq";
 import {
   QUEUE_NAMES,
@@ -9,9 +10,12 @@ import {
   type SandboxResultMessage,
 } from "@repo/contracts";
 import { executeSandboxCommand } from "./executor";
-import { provisionSandbox, resolveSandboxPath } from "./provision";
+import { getSandbox, provisionSandbox, repoPath } from "./provision";
 
-const sandboxRoot = process.env.SANDBOX_ROOT ?? process.cwd();
+if (!process.env.DAYTONA_API_KEY) {
+  console.error("DAYTONA_API_KEY is required");
+  process.exit(1);
+}
 
 const worker = new Worker(
   QUEUE_NAMES.agentToSandbox,
@@ -19,7 +23,7 @@ const worker = new Worker(
     const data = job.data as SandboxCommandMessage | SandboxProvisionMessage;
 
     if (data.type === "provision") {
-      const result = await provisionSandbox(sandboxRoot, {
+      const result = await provisionSandbox({
         sandboxId: data.sandboxId,
         repoUrl: data.repoUrl,
         branch: data.branch,
@@ -36,9 +40,10 @@ const worker = new Worker(
       return;
     }
 
-    const sandboxPath = resolveSandboxPath(sandboxRoot, data.sandboxId);
+    const sandbox = await getSandbox(data.sandboxId);
     const result = await executeSandboxCommand(
-      sandboxPath,
+      sandbox,
+      repoPath(data.sandboxId),
       data.command,
       data.args,
     );
@@ -59,4 +64,4 @@ const worker = new Worker(
   { connection: redisConnection },
 );
 
-console.log(`Sandbox worker started (root: ${sandboxRoot})`);
+console.log("Sandbox worker started (Daytona)");

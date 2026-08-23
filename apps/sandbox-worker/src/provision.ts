@@ -1,44 +1,13 @@
-import { spawn } from "node:child_process";
-import fs from "node:fs/promises";
 import path from "node:path";
+import type { Sandbox } from "@daytonaio/sdk";
 import type { SandboxProvisionResult } from "@repo/contracts";
+import {
+  daytonaClient,
+  DEFAULT_SANDBOX_CREATE_PARAMS,
+  SANDBOX_ROOT_DIR,
+} from "./daytona";
 
-function runGit(
-  args: string[],
-  cwd: string,
-): Promise<{ output: string; exitCode: number; error?: string }> {
-  return new Promise((resolve) => {
-    const child = spawn("git", args, {
-      cwd,
-      windowsHide: true,
-    });
-
-    let stdout = "";
-    let stderr = "";
-
-    child.stdout?.on("data", (d: Buffer) => {
-      stdout += d.toString("utf8");
-    });
-    child.stderr?.on("data", (d: Buffer) => {
-      stderr += d.toString("utf8");
-    });
-
-    child.on("error", (err) => {
-      resolve({
-        output: `git spawn error: ${err.message}`,
-        exitCode: 1,
-        error: err.message,
-      });
-    });
-
-    child.on("exit", (code) => {
-      resolve({
-        output: [stdout.trim(), stderr.trim()].filter(Boolean).join("\n"),
-        exitCode: code ?? 1,
-      });
-    });
-  });
-}
+const sandboxRegistry = new Map<string, Sandbox>();
 
 function isGithubHttpsUrl(repoUrl: string): boolean {
   try {
@@ -49,106 +18,100 @@ function isGithubHttpsUrl(repoUrl: string): boolean {
   }
 }
 
-export function resolveSandboxPath(baseRoot: string, sandboxId: string): string {
-  return path.join(baseRoot, sandboxId);
+function sandboxName(sandboxId: string): string {
+  return `nixx-${sandboxId}`;
 }
 
-export async function sandboxExists(sandboxPath: string): Promise<boolean> {
+export function repoPath(sandboxId: string): string {
+  return path.posix.join(SANDBOX_ROOT_DIR, sandboxId);
+}
+
+export async function getSandbox(sandboxId: string): Promise<Sandbox> {
+  const cached = sandboxRegistry.get(sandboxId);
+  if (cached) {
+    return cached;
+  }
+
+  const sandbox = await daytonaClient().get(sandboxName(sandboxId));
+  sandboxRegistry.set(sandboxId, sandbox);
+  return sandbox;
+}
+
+async function repoExists(sandbox: Sandbox, repoDir: string): Promise<boolean> {
   try {
-    await fs.access(path.join(sandboxPath, ".git"));
+    await sandbox.fs.listFiles(repoDir, { depth: 1 });
     return true;
   } catch {
     return false;
   }
 }
 
-export async function provisionSandbox(
-  baseRoot: string,
-  input: {
-    sandboxId: string;
-    repoUrl: string;
-    branch?: string;
-    installationToken: string;
-  },
-): Promise<SandboxProvisionResult> {
-  const sandboxPath = resolveSandboxPath(baseRoot, input.sandboxId);
+export async function provisionSandbox(input: {
+  sandboxId: string;
+  repoUrl: string;
+  branch?: string;
+  installationToken: string;
+}): Promise<SandboxProvisionResult> {
+  const sandboxId = input.sandboxId;
+  const sandboxDir = repoPath(sandboxId);
 
   if (!isGithubHttpsUrl(input.repoUrl)) {
     return {
-      sandboxId: input.sandboxId,
-      sandboxPath,
+      sandboxId,
+      sandboxPath: sandboxDir,
       cloned: false,
       error: "Only https://github.com repository URLs are allowed",
     };
   }
 
-  if (await sandboxExists(sandboxPath)) {
+  const name = sandboxName(sandboxId);
+
+  let sandbox: Sandbox;
+  try {
+    sandbox = await daytonaClient().get(name);
+  } catch {
+    sandbox = await daytonaClient().create({
+      ...DEFAULT_SANDBOX_CREATE_PARAMS,
+      name,
+    });
+  }
+  sandboxRegistry.set(sandboxId, sandbox);
+
+  if (await repoExists(sandbox, sandboxDir)) {
     return {
-      sandboxId: input.sandboxId,
-      sandboxPath,
+      sandboxId,
+      sandboxPath: sandboxDir,
       cloned: false,
     };
   }
 
-  await fs.mkdir(sandboxPath, { recursive: true });
+  const auth = Buffer.from(
+    `x-access-token:${input.installationToken}`,
+  ).toString("base64");
 
-  const auth = Buffer.from(`x-access-token:${input.installationToken}`).toString(
-    "base64",
+  await sandbox.git.clone(
+    input.repoUrl,
+    sandboxDir,
+    input.branch,
+    undefined,
+    "x-access-token",
+    input.installationToken,
+    false,
+    1,
   );
 
-  const cloneArgs = [
-    "-c",
-    `http.extraheader=AUTHORIZATION: basic ${auth}`,
-    "clone",
-    "--depth",
-    "1",
-    ...(input.branch ? ["--branch", input.branch] : []),
-    input.repoUrl,
-    ".",
-  ];
-
-  const result = await runGit(cloneArgs, sandboxPath);
-
-  if (result.exitCode !== 0) {
-    return {
-      sandboxId: input.sandboxId,
-      sandboxPath,
-      cloned: false,
-      error: result.error ?? result.output,
-    };
-  }
-
-  const configResults = await Promise.all([
-    runGit(
-      [
-        "config",
-        "http.extraheader",
-        `AUTHORIZATION: basic ${auth}`,
-      ],
-      sandboxPath,
-    ),
-    runGit(["config", "user.name", "Nixx"], sandboxPath),
-    runGit(
-      ["config", "user.email", "noreply@nixx.dev"],
-      sandboxPath,
-    ),
-    runGit(["config", "commit.gpgsign", "false"], sandboxPath),
-  ]);
-
-  for (const result of configResults) {
-    if (result.exitCode !== 0) {
-      return {
-        sandboxId: input.sandboxId,
-        sandboxPath,
-        cloned: true,
-        error: result.error ?? result.output,
-      };
-    }
-  }
+  await sandbox.git.setConfig(
+    "http.extraheader",
+    `AUTHORIZATION: basic ${auth}`,
+    "local",
+    sandboxDir,
+  );
+  await sandbox.git.configureUser("Nixx", "noreply@nixx.dev", "local", sandboxDir);
+  await sandbox.git.setConfig("commit.gpgsign", "false", "local", sandboxDir);
 
   return {
-    sandboxId: input.sandboxId,
-    sandboxPath,
+    sandboxId,
+    sandboxPath: sandboxDir,
     cloned: true,
   };
 }
