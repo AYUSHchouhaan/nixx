@@ -4,10 +4,10 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "langgraphjs dev --config langgraph.json",
-    "start": "langgraphjs dev --config langgraph.json",
+    "dev": "langgraphjs dev --config langgraph.json --port 4000",
+    "start": "langgraphjs dev --config langgraph.json --port 4000",
     "check-types": "tsc --noEmit",
-    "langgraph:dev": "langgraphjs dev --config langgraph.json"
+    "langgraph:dev": "langgraphjs dev --config langgraph.json --port 4000"
   },
   "dependencies": {
     "@repo/agent": "*",
