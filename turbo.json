@@ -17,5 +17,16 @@
       "cache": false,
       "persistent": true
     }
-  }
+  },
+  "globalEnv": [
+    "AGENT_BRAIN_URL",
+    "GITHUB_CLIENT_ID",
+    "GITHUB_CLIENT_SECRET",
+    "GITHUB_APP_ID",
+    "GITHUB_PRIVATE_KEY",
+    "DATABASE_URL",
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_URL",
+    "NODE_ENV"
+  ]
 }

@@ -44,8 +44,9 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
-.impeccable/
-*.md
+.impeccable
+PRODUCT.md
+DESIGN.md
 
 # Command Code
 .commandcode/
