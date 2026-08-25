@@ -5,7 +5,8 @@ import { db } from "@repo/db";
 import { threads } from "@repo/db/schema";
 import { eq } from "drizzle-orm";
 import { runAgent } from "../../../../lib/agent-brain";
-import { getInstallationToken } from "../../../../lib/github-installation";
+import { createInstallationToken } from "../../../../lib/github-installation";
+import { getGitHubInstallationId } from "../../../../lib/auth";
 
 export async function POST(
   request: Request,
@@ -48,9 +49,14 @@ export async function POST(
   const sandboxId = thread.sandboxId ?? threadId;
 
   try {
-    const { token: installationToken } = await getInstallationToken(
-      session.user.id,
-    );
+    const installationId = await getGitHubInstallationId();
+    if (!installationId) {
+      return NextResponse.json(
+        { error: "GitHub installation ID missing" },
+        { status: 401 },
+      );
+    }
+    const { token: installationToken } = await createInstallationToken(installationId);
 
     const { summary } = await runAgent({
       threadId,

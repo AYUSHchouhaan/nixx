@@ -17,6 +17,9 @@ export async function POST(request: Request) {
   const body = (await request.json()) as {
     conversationId: string;
     sandboxId?: string;
+    repoUrl?: string;
+    branch?: string;
+    title?: string;
   };
 
   if (!body.conversationId) {
@@ -32,6 +35,11 @@ export async function POST(request: Request) {
     conversationId: body.conversationId,
     userId: session.user.id,
     sandboxId: body.sandboxId ?? null,
+    metadata: {
+      repoUrl: body.repoUrl ?? null,
+      branch: body.branch ?? null,
+      title: body.title ?? null,
+    },
   });
 
   return NextResponse.json({ id });
