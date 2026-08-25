@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nixx — App Pages &amp; SSE Streaming</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --panel-2: #1e222c;
+      --border: #2a2f3a;
+      --text: #e6e8ee;
+      --muted: #9aa3b2;
+      --accent: #4f8cff;
+      --accent-2: #7c5cff;
+      --code-bg: #12151b;
+      --green: #3fb68b;
+      --amber: #e0a458;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .wrap {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 28px 20px;
+      border-right: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    aside h1 {
+      font-size: 18px;
+      margin: 0 0 6px;
+      letter-spacing: -0.02em;
+    }
+
+    aside .sub {
+      color: var(--muted);
+      font-size: 13px;
+      margin: 0 0 24px;
+    }
+
+    aside nav a {
+      display: block;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      margin-bottom: 2px;
+    }
+
+    aside nav a:hover {
+      color: var(--text);
+      background: var(--panel-2);
+    }
+
+    main {
+      padding: 40px 56px 80px;
+      max-width: 960px;
+    }
+
+    h2 {
+      font-size: 24px;
+      letter-spacing: -0.02em;
+      margin: 48px 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h3 {
+      font-size: 18px;
+      margin: 28px 0 10px;
+    }
+
+    p { color: #cdd2dc; margin: 10px 0; }
+
+    code {
+      background: var(--code-bg);
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+      font-size: 13px;
+      color: #d7e0ff;
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    pre code { background: none; padding: 0; color: #d7e0ff; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13.5px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      background: var(--panel-2);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(79, 140, 255, 0.14);
+      color: #9dbdff;
+    }
+
+    .badge.green {
+      background: rgba(63, 182, 139, 0.14);
+      color: #8fe0c0;
+    }
+
+    .diagram {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      overflow-x: auto;
+      font-family: ui-monospace, "Cascadia Code", monospace;
+      font-size: 12.5px;
+      color: #aeb6c4;
+      white-space: pre;
+    }
+
+    .note {
+      border-left: 3px solid var(--amber);
+      background: rgba(224, 164, 88, 0.08);
+      padding: 10px 14px;
+      border-radius: 0 10px 10px 0;
+      margin: 16px 0;
+      color: #e6c99c;
+    }
+
+    ul { color: #cdd2dc; }
+
+    @media (max-width: 800px) {
+      .wrap { grid-template-columns: 1fr; }
+      aside {
+        position: static;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+      main { padding: 24px 20px 60px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <aside>
+      <h1>Nixx</h1>
+      <p class="sub">App Pages &amp; SSE Streaming</p>
+      <nav>
+        <a href="#overview">Overview</a>
+        <a href="#routes">New Routes</a>
+        <a href="#app-page">/app Page</a>
+        <a href="#thread-page">/app/[id] Page</a>
+        <a href="#sse-flow">SSE Streaming Flow</a>
+        <a href="#api">API Changes</a>
+        <a href="#files">File-by-File</a>
+        <a href="#run">Running</a>
+      </nav>
+    </aside>
+
+    <main>
+      <h2 id="overview">Overview</h2>
+      <p>
+        Two new pages were added to the web app: a task launcher at
+        <code>/app</code> and a live agent chat/run view at
+        <code>/app/[id]</code>. The launcher lets the signed-in developer pick a
+        repository and branch (fetched from GitHub via Octokit using the
+        installation token), describe a task, and start it. The run view streams
+        the LangGraph agent's messages, tool calls, and tool results over SSE
+        using the LangGraph SDK's <code>useStream</code> React hook.
+      </p>
+
+      <div class="diagram">┌───────────────┐   create conversation + thread   ┌────────────────────────┐
+│    /app       │ ─────────────────────────────────▶│  Next.js API routes     │
+│ (launcher UI) │                                  │  /api/conversations     │
+└──────┬────────┘                                  │  /api/threads           │
+       │ navigate to /app/{threadId}               └───────────┬────────────┘
+       ▼                                                       │
+┌────────────────────────┐   POST /api/threads/{id}/stream     │
+│  /app/[id] (chat UI)   │ ───────────────────────────────────▶│
+│  useStream + SSE       │                                    │
+└───────────┬────────────┘                                    │
+            │ authenticated SSE relay                         ▼
+            │                                    ┌────────────────────────┐
+            └────────────────────────────────────▶│  agent-brain           │
+                                                 │  (LangGraph Server)    │
+                                                 └────────────────────────┘</div>
+
+      <h2 id="routes">New Routes</h2>
+      <table>
+        <thead>
+          <tr><th>Route</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>GET /app</code></td><td>Server component; auth-gated task launcher</td></tr>
+          <tr><td><code>GET /app/[id]</code></td><td>Server component; loads thread + messages, renders chat client</td></tr>
+          <tr><td><code>POST /api/threads/[threadId]/stream</code></td><td>Authenticated SSE relay to the LangGraph stream</td></tr>
+          <tr><td><code>GET /api/threads/[threadId]</code></td><td>Returns thread metadata + prior messages for hydration</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="app-page">/app Page</h2>
+      <p>
+        The launcher is a server component that redirects to <code>/login</code>
+        when there is no session. It loads the current user's conversations and
+        threads from Postgres and passes them to a client shell.
+      </p>
+
+      <h3>Repository &amp; Branch Selection</h3>
+      <p>
+        The client shell fetches repositories from
+        <code>/api/github/repositories</code>, which resolves the GitHub App
+        installation token for the signed-in user and lists repos accessible to
+        that installation using Octokit. When a repository is chosen, it fetches
+        branches from <code>/api/github/branches?owner=&amp;repo=</code> and
+        pre-selects the default branch.
+      </p>
+
+      <h3>Starting a Task</h3>
+      <pre><code>1. User types a prompt and presses Enter.
+2. POST /api/conversations  → { id }
+3. POST /api/threads        → { id } (stores repoUrl, branch, title in metadata)
+4. Navigate to /app/{threadId}?prompt=...&repoUrl=...&branch=...</code></pre>
+
+      <p>
+        Conversation and thread ids are both <code>randomUUID()</code> and are
+        scoped to the authenticated <code>userId</code>, so two users never share
+        the same thread or conversation id.
+      </p>
+
+      <h2 id="thread-page">/app/[id] Page</h2>
+      <p>
+        The thread page is a server component that verifies thread ownership,
+        fetches prior LangGraph messages via <code>client.threads.getState</code>,
+        and renders the client chat UI. The chat client uses the LangGraph SDK's
+        <code>useStream</code> hook with a custom <code>FetchStreamTransport</code>
+        pointing at the authenticated SSE relay route.
+      </p>
+
+      <h3>Message Rendering</h3>
+      <ul>
+        <li><strong>Human messages</strong> — right-aligned bubbles.</li>
+        <li><strong>Agent messages</strong> — left-aligned bubbles.</li>
+        <li><strong>Tool calls</strong> — show tool name, JSON args, result, and status.</li>
+        <li><strong>Tool results</strong> — rendered as monospace code blocks.</li>
+      </ul>
+
+      <p>
+        The input stays fixed at the bottom; there is intentionally no motion
+        animation on the composer.
+      </p>
+
+      <h2 id="sse-flow">SSE Streaming Flow</h2>
+      <ol>
+        <li>The chat client calls <code>stream.submit()</code> with the user query and <code>configurable</code> values.</li>
+        <li><code>FetchStreamTransport</code> POSTs to <code>/api/threads/[threadId]/stream</code>.</li>
+        <li>The relay verifies the session, resolves the installation token, and calls <code>streamAgent()</code>.</li>
+        <li><code>streamAgent()</code> uses <code>client.runs.stream</code> with <code>streamMode: ["messages-tuple", "values"]</code>.</li>
+        <li>The relay forwards each LangGraph SSE chunk to the browser as <code>event:</code> + <code>data:</code> frames.</li>
+        <li><code>useStream</code> reassembles messages, tool calls, and tool results in React state.</li>
+      </ol>
+
+      <pre><code>// lib/agent-brain.ts
+export function streamAgent(input) {
+  return client.runs.stream(input.threadId, "coding", {
+    input: { query: input.query, notes: input.notes ?? "" },
+    config: {
+      configurable: {
+        thread_id: input.threadId,
+        conversation_id: input.conversationId,
+        sandbox_id: input.sandboxId,
+        repo_url: input.repoUrl,
+        branch: input.branch,
+        installation_token: input.installationToken,
+      },
+    },
+    streamMode: ["messages-tuple", "values"],
+  });
+}</code></pre>
+
+      <div class="note">
+        The LangGraph <code>thread_id</code> equals the database <code>thread.id</code>,
+        so subsequent runs resume from the latest checkpoint instead of starting fresh.
+      </div>
+
+      <h2 id="api">API Changes</h2>
+
+      <h3>POST /api/conversations</h3>
+      <p>Now accepts an optional <code>title</code>. Also added a <code>GET</code> handler that lists the user's conversations and their threads.</p>
+      <pre><code>// request (optional body)
+{ "title": "implement rate limiting" }
+
+// response
+{ "id": "conversation-uuid" }</code></pre>
+
+      <h3>POST /api/threads</h3>
+      <p>Now stores <code>repoUrl</code>, <code>branch</code>, and <code>title</code> in the thread's <code>metadata</code> JSONB column.</p>
+      <pre><code>// request
+{
+  "conversationId": "conversation-uuid",
+  "repoUrl": "https://github.com/you/repo.git",
+  "branch": "main",
+  "title": "implement rate limiting"
+}</code></pre>
+
+      <h3>GET /api/threads/[threadId]</h3>
+      <p>Returns the thread (with metadata) plus prior agent messages for hydration.</p>
+      <pre><code>// response
+{
+  "thread": { "id": "...", "metadata": { "repoUrl": "...", "branch": "..." } },
+  "messages": [ ... ]
+}</code></pre>
+
+      <h3>POST /api/threads/[threadId]/stream</h3>
+      <p>
+        SSE endpoint. Accepts either a LangGraph-shaped payload
+        (<code>input.query</code> + <code>config.configurable</code>) or the flat
+        <code>query</code>/<code>repoUrl</code>/<code>branch</code> shape.
+      </p>
+
+      <h2 id="files">File-by-File</h2>
+      <table>
+        <thead>
+          <tr><th>File</th><th>Change</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>apps/web/app/lib/agent-brain.ts</code></td><td>Added <code>streamAgent()</code>, <code>getThreadMessages()</code>, <code>AGENT_ASSISTANT_ID</code></td></tr>
+          <tr><td><code>apps/web/app/api/threads/[threadId]/stream/route.ts</code></td><td>New SSE relay route</td></tr>
+          <tr><td><code>apps/web/app/api/threads/[threadId]/route.ts</code></td><td>New GET handler for thread + messages</td></tr>
+          <tr><td><code>apps/web/app/api/threads/route.ts</code></td><td>Store repoUrl/branch/title in metadata</td></tr>
+          <tr><td><code>apps/web/app/api/conversations/route.ts</code></td><td>Added GET list handler and optional title</td></tr>
+          <tr><td><code>apps/web/app/app/page.tsx</code></td><td>New server component for /app</td></tr>
+          <tr><td><code>apps/web/app/app/app-shell.tsx</code></td><td>New client shell (repo/branch selectors + lists)</td></tr>
+          <tr><td><code>apps/web/app/app/app.module.css</code></td><td>New styles for /app</td></tr>
+          <tr><td><code>apps/web/app/app/[id]/page.tsx</code></td><td>New server component for /app/[id]</td></tr>
+          <tr><td><code>apps/web/app/app/[id]/chat-client.tsx</code></td><td>New client chat UI using useStream</td></tr>
+          <tr><td><code>apps/web/app/app/[id]/chat.module.css</code></td><td>New styles for /app/[id]</td></tr>
+          <tr><td><code>turbo.json</code></td><td>Declared env vars used by web</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="run">Running</h2>
+      <pre><code># install
+bun install
+
+# start Redis, then run these in separate terminals:
+
+# 1. sandbox worker
+bun run dev --filter=sandbox-worker
+
+# 2. agent brain
+bun run dev --filter=agent-brain
+
+# 3. web (primary backend)
+bun run dev --filter=web
+
+# open http://localhost:3000/app</code></pre>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nixx — GitHub Authentication Cookie Flow</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --panel-2: #1e222c;
+      --border: #2a2f3a;
+      --text: #e6e8ee;
+      --muted: #9aa3b2;
+      --accent: #4f8cff;
+      --accent-2: #7c5cff;
+      --code-bg: #12151b;
+      --green: #3fb68b;
+      --amber: #e0a458;
+      --red: #e06c75;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .wrap {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 28px 20px;
+      border-right: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    aside h1 {
+      font-size: 18px;
+      margin: 0 0 6px;
+      letter-spacing: -0.02em;
+    }
+
+    aside .sub {
+      color: var(--muted);
+      font-size: 13px;
+      margin: 0 0 24px;
+    }
+
+    nav a {
+      display: block;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      margin-bottom: 2px;
+    }
+
+    nav a:hover { color: var(--text); background: var(--panel-2); }
+
+    main {
+      padding: 40px 56px 80px;
+      max-width: 1020px;
+    }
+
+    h2 {
+      font-size: 24px;
+      letter-spacing: -0.02em;
+      margin: 48px 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h3 { font-size: 18px; margin: 28px 0 10px; }
+    p { color: #cdd2dc; margin: 10px 0; }
+    li { color: #cdd2dc; margin: 7px 0; }
+    strong { color: var(--text); }
+
+    code {
+      background: var(--code-bg);
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+      font-size: 13px;
+      color: #d7e0ff;
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #d7e0ff;
+    }
+
+    .hero {
+      padding: 24px 26px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: linear-gradient(135deg, #191e2a, #151820);
+    }
+
+    .hero h2 { margin: 0 0 10px; border: 0; padding: 0; }
+    .hero p { margin-bottom: 0; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--panel);
+    }
+
+    .card h3 { margin-top: 0; }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      color: #d9fff1;
+      background: rgba(63, 182, 139, .16);
+      border: 1px solid rgba(63, 182, 139, .35);
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .warning {
+      border-left: 3px solid var(--amber);
+      padding: 10px 14px;
+      background: rgba(224, 164, 88, .08);
+      color: #e8d0a8;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    th, td {
+      text-align: left;
+      vertical-align: top;
+      padding: 11px 13px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th { color: var(--text); background: var(--panel-2); font-size: 13px; }
+    td { color: #cdd2dc; }
+    tr:last-child td { border-bottom: 0; }
+
+    .flow {
+      display: grid;
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 12px;
+      align-items: start;
+      padding: 13px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel);
+    }
+
+    .number {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: white;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .step strong { display: block; margin-bottom: 3px; }
+
+    @media (max-width: 760px) {
+      .wrap { display: block; }
+      aside { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--border); }
+      main { padding: 28px 20px 60px; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <aside>
+      <h1>GitHub Auth Rewrite</h1>
+      <p class="sub">Implementation reference</p>
+      <nav>
+        <a href="#summary">Summary</a>
+        <a href="#old-flow">Old flow</a>
+        <a href="#new-flow">New flow</a>
+        <a href="#cookies">Cookie contents</a>
+        <a href="#routes">Route behavior</a>
+        <a href="#files">File-by-file changes</a>
+        <a href="#validation">Validation</a>
+      </nav>
+    </aside>
+
+    <main>
+      <section class="hero" id="summary">
+        <h2>GitHub credentials now live in cookies</h2>
+        <p>I removed the GitHub App slug lookup and stopped reading the GitHub OAuth token from the database during API requests. Login resolves the authenticated user’s GitHub App installation once, then stores the OAuth access token and installation ID directly in HttpOnly cookies.</p>
+      </section>
+
+      <h2 id="old-flow">What changed from the old flow</h2>
+      <div class="grid">
+        <div class="card">
+          <span class="badge">Removed</span>
+          <h3>Database token lookup</h3>
+          <p>The old <code>getAccessToken(userId)</code> function queried the <code>accounts</code> table for every GitHub operation.</p>
+        </div>
+        <div class="card">
+          <span class="badge">Removed</span>
+          <h3>App slug dependency</h3>
+          <p>The old error path depended on <code>GITHUB_APP_SLUG</code> and generated an installation URL from that slug.</p>
+        </div>
+        <div class="card">
+          <span class="badge">Removed</span>
+          <h3>App-wide installation scan</h3>
+          <p>The incorrect intermediate implementation used an app token with <code>apps.listInstallations()</code> and matched by account login.</p>
+        </div>
+        <div class="card">
+          <span class="badge">Changed</span>
+          <h3>Per-request credential resolution</h3>
+          <p>Repository, branch, run, stream, and installation-token routes now use the persisted installation cookie and mint a short-lived installation token.</p>
+        </div>
+      </div>
+
+      <h2 id="new-flow">New login and GitHub API flow</h2>
+      <div class="flow">
+        <div class="step"><div class="number">1</div><div><strong>GitHub OAuth completes through Better Auth.</strong><span>Better Auth creates the GitHub account record and exposes the OAuth access token to the account creation hook.</span></div></div>
+        <div class="step"><div class="number">2</div><div><strong>Resolve the user’s App installation with Octokit.</strong><span><code>getInstallationId(accessToken)</code> calls <code>listInstallationsForAuthenticatedUser()</code>, then finds the installation whose <code>app_id</code> matches <code>GITHUB_APP_ID</code>.</span></div></div>
+        <div class="step"><div class="number">3</div><div><strong>Store both values once in HttpOnly cookies.</strong><span>The OAuth token goes into <code>GITHUB_ACCESS_TOKEN_COOKIE</code>; the installation ID goes into <code>GITHUB_INSTALLATION_ID_COOKIE</code>.</span></div></div>
+        <div class="step"><div class="number">4</div><div><strong>Mint installation tokens when GitHub data is needed.</strong><span>API routes read the installation ID cookie and call <code>createInstallationToken(installationId)</code> using the GitHub App credentials.</span></div></div>
+        <div class="step"><div class="number">5</div><div><strong>Call installation-scoped GitHub endpoints.</strong><span>Repositories use <code>listReposAccessibleToInstallation</code>; branches use the repository branch endpoint through Octokit.</span></div></div>
+      </div>
+
+      <h2 id="cookies">Cookie contents</h2>
+      <table>
+        <thead><tr><th>Cookie</th><th>Stored value</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>GITHUB_ACCESS_TOKEN_COOKIE</code></td><td>GitHub OAuth access token</td><td>Retained as the authenticated user credential and available through <code>getGitHubToken()</code>.</td></tr>
+          <tr><td><code>GITHUB_INSTALLATION_ID_COOKIE</code></td><td>Numeric GitHub App installation ID</td><td>Used to mint installation access tokens without another DB lookup or installation discovery request.</td></tr>
+        </tbody>
+      </table>
+      <p>Cookie values are stored directly. Cookies are HttpOnly, use <code>SameSite=Lax</code>, have a root path, and become Secure in production.</p>
+
+      <h2 id="routes">Route behavior</h2>
+      <table>
+        <thead><tr><th>Route</th><th>Behavior after the rewrite</th></tr></thead>
+        <tbody>
+          <tr><td><code>GET /api/github/repositories</code></td><td>Checks the Better Auth session, reads the installation ID cookie, mints an installation token, then calls <code>fetchRepositories()</code>.</td></tr>
+          <tr><td><code>GET /api/github/branches?owner=&amp;repo=</code></td><td>Checks the session and query parameters, mints an installation token from the cookie ID, then calls <code>fetchBranches()</code>.</td></tr>
+          <tr><td><code>GET /api/github/installation-token</code></td><td>Returns a short-lived installation token based on the persisted installation ID. It does not discover the installation or query the accounts table.</td></tr>
+          <tr><td><code>POST /api/threads/[threadId]/run</code></td><td>Uses the cookie-backed installation ID when passing GitHub access to the agent run.</td></tr>
+          <tr><td><code>GET /api/threads/[threadId]/stream</code></td><td>Uses the same cookie-backed installation token flow for streamed agent execution.</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="files">File-by-file changes</h2>
+      <table>
+        <thead><tr><th>File</th><th>Change</th></tr></thead>
+        <tbody>
+          <tr><td><code>apps/web/app/lib/auth.ts</code></td><td>Added cookie constants, direct cookie readers, credential storage, and the Better Auth account creation hook.</td></tr>
+          <tr><td><code>apps/web/app/lib/github-installation.ts</code></td><td>Removed DB imports and <code>getAccessToken</code>. Added Octokit-based authenticated-user installation discovery and kept installation token, repository, and branch helpers.</td></tr>
+          <tr><td><code>apps/web/app/api/github/repositories/route.ts</code></td><td>Uses the installation ID cookie and creates an installation token before listing repositories.</td></tr>
+          <tr><td><code>apps/web/app/api/github/branches/route.ts</code></td><td>Uses the installation ID cookie and creates an installation token before listing branches.</td></tr>
+          <tr><td><code>apps/web/app/api/github/installation-token/route.ts</code></td><td>Returns a token created from the persisted installation ID instead of resolving credentials by user ID.</td></tr>
+          <tr><td><code>apps/web/app/api/threads/[threadId]/run/route.ts</code></td><td>Replaced the removed user-ID-based helper with cookie-backed installation token creation.</td></tr>
+          <tr><td><code>apps/web/app/api/threads/[threadId]/stream/route.ts</code></td><td>Applied the same cookie-backed installation token flow to SSE agent execution.</td></tr>
+          <tr><td><code>turbo.json</code></td><td>Declared <code>NODE_ENV</code> in <code>globalEnv</code> so Turbo’s lint rule recognizes the cookie security setting.</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="validation">Validation</h2>
+      <div class="card">
+        <p><strong>Type checking:</strong> Passed with <code>bun run check-types</code>.</p>
+        <p><strong>Lint:</strong> Passed with <code>bun run lint</code>.</p>
+        <p><strong>Reference scan:</strong> No remaining web references to <code>getAccessToken</code>, <code>getInstallationToken</code>, <code>GITHUB_APP_SLUG</code>, <code>getAppSlug</code>, or <code>apps.listInstallations()</code>.</p>
+      </div>
+
+      <h2>Runtime requirements</h2>
+      <div class="warning">
+        The login hook requires <code>BETTER_AUTH_SECRET</code>. GitHub App token creation still requires <code>GITHUB_APP_ID</code> and <code>GITHUB_PRIVATE_KEY</code>. The OAuth provider continues to require <code>GITHUB_CLIENT_ID</code> and <code>GITHUB_CLIENT_SECRET</code>.
+      </div>
+    </main>
+  </div>
+</body>
+</html>
