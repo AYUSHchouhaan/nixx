@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { auth } from "../../../lib/auth";
 import { headers } from "next/headers";
 import {
-  getInstallationToken,
+  createInstallationToken,
   fetchRepositories,
 } from "../../../lib/github-installation";
+import { getGitHubInstallationId } from "../../../lib/auth";
 
 export async function GET() {
   const session = await auth.api.getSession({
@@ -16,7 +17,12 @@ export async function GET() {
   }
 
   try {
-    const { token } = await getInstallationToken(session.user.id);
+    const installationId = await getGitHubInstallationId();
+    if (!installationId) {
+      return NextResponse.json({ error: "GitHub installation ID missing" }, { status: 401 });
+    }
+
+    const { token } = await createInstallationToken(installationId);
     const repositories = await fetchRepositories(token);
 
     return NextResponse.json({ repositories });
