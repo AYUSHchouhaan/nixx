@@ -59,7 +59,6 @@ export default async function ThreadPage({
   return (
     <ChatClient
       threadId={id}
-      conversationId={thread.conversationId}
       initialPrompt={query.prompt ?? ""}
       repoUrl={repoUrl}
       branch={branch}

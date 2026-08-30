@@ -13,7 +13,6 @@ export type AgentStreamChunk = {
 
 function buildConfig(input: {
   threadId: string;
-  conversationId: string;
   sandboxId: string;
   repoUrl: string;
   branch?: string;
@@ -23,7 +22,6 @@ function buildConfig(input: {
   return {
     configurable: {
       thread_id: input.threadId,
-      conversation_id: input.conversationId,
       sandbox_id: input.sandboxId,
       repo_url: input.repoUrl,
       branch: input.branch,
@@ -34,7 +32,6 @@ function buildConfig(input: {
 
 export async function runAgent(input: {
   threadId: string;
-  conversationId: string;
   sandboxId: string;
   query: string;
   notes?: string;
@@ -55,7 +52,6 @@ export async function runAgent(input: {
 
 export function streamAgent(input: {
   threadId: string;
-  conversationId: string;
   sandboxId: string;
   query: string;
   notes?: string;

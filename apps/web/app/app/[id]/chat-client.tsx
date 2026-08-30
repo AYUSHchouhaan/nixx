@@ -52,14 +52,12 @@ function contentToText(content: MessageContent): string {
 
 export function ChatClient({
   threadId,
-  conversationId,
   initialPrompt,
   repoUrl,
   branch,
   initialMessages,
 }: {
   threadId: string;
-  conversationId: string;
   initialPrompt: string;
   repoUrl: string;
   branch: string;
@@ -97,14 +95,13 @@ export function ChatClient({
         notes: "",
         repoUrl,
         branch,
-        conversationId,
         multitask_strategy: "interrupt",
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to run agent");
     }
     setDraft("");
-  }, [draft, stream, conversationId, repoUrl, branch]);
+  }, [draft, stream, repoUrl, branch]);
 
   const messages: ChatMessage[] =
     stream.messages.length > 0
