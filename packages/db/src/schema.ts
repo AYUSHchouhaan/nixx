@@ -66,30 +66,10 @@ export const verifications = pgTable(
   (table) => [index("verifications_identifier_idx").on(table.identifier)],
 );
 
-export const conversations = pgTable(
-  "conversations",
-  {
-    id: text("id").primaryKey(),
-    userId: text("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    title: text("title"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
-      .defaultNow()
-      .$onUpdate(() => new Date())
-      .notNull(),
-  },
-  (table) => [index("conversations_userId_idx").on(table.userId)],
-);
-
 export const threads = pgTable(
   "threads",
   {
     id: text("id").primaryKey(),
-    conversationId: text("conversation_id")
-      .notNull()
-      .references(() => conversations.id, { onDelete: "cascade" }),
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
@@ -101,10 +81,7 @@ export const threads = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [
-    index("threads_conversationId_idx").on(table.conversationId),
-    index("threads_userId_idx").on(table.userId),
-  ],
+  (table) => [index("threads_userId_idx").on(table.userId)],
 );
 
 export const schema = {
@@ -112,6 +89,5 @@ export const schema = {
   accounts,
   sessions,
   verifications,
-  conversations,
   threads,
 };
