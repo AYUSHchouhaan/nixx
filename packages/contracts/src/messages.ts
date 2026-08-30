@@ -13,7 +13,6 @@ export type SandboxCommandName =
 
 export interface SandboxProvisionInput {
   threadId: string;
-  conversationId: string;
   sandboxId: string;
   repoUrl: string;
   branch?: string;
@@ -29,7 +28,6 @@ export interface SandboxProvisionResult {
 
 export interface SandboxCallInput {
   threadId: string;
-  conversationId: string;
   sandboxId: string;
   command: SandboxCommandName;
   args: Record<string, unknown>;
@@ -61,7 +59,6 @@ export interface SandboxResultMessage {
   type: "result";
   commandId: string;
   threadId: string;
-  conversationId: string;
   sandboxId: string;
   output: string;
   exitCode: number;

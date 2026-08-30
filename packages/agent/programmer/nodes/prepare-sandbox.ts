@@ -15,7 +15,6 @@ export async function prepareSandboxNode(
   config: RunnableConfig,
 ): Promise<Partial<ProgrammerState>> {
   const threadId = getConfigurableString(config, "thread_id");
-  const conversationId = getConfigurableString(config, "conversation_id");
   const sandboxId = getConfigurableString(config, "sandbox_id");
   const repoUrl = getConfigurableString(config, "repo_url");
   const installationToken = getConfigurableString(config, "installation_token");
@@ -26,7 +25,6 @@ export async function prepareSandboxNode(
 
   const result = await deps.sandboxClient.provision({
     threadId,
-    conversationId,
     sandboxId,
     repoUrl,
     branch,

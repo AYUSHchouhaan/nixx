@@ -52,7 +52,6 @@ const worker = new Worker(
       type: "result",
       commandId: data.commandId,
       threadId: data.threadId,
-      conversationId: data.conversationId,
       sandboxId: data.sandboxId,
       output: result.output,
       exitCode: result.exitCode,
