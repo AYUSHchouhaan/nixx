@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nixx — Conversation Removal</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --panel-2: #1e222c;
+      --border: #2a2f3a;
+      --text: #e6e8ee;
+      --muted: #9aa3b2;
+      --red: #e05252;
+      --green: #3fb68b;
+      --code: #12151b;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 ui-sans-serif, system-ui, sans-serif; }
+    .layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+    aside { position: sticky; top: 0; height: 100vh; padding: 28px 20px; background: var(--panel); border-right: 1px solid var(--border); }
+    aside h1 { margin: 0 0 6px; font-size: 18px; }
+    aside p { margin: 0 0 24px; color: var(--muted); font-size: 13px; }
+    nav a { display: block; padding: 6px 10px; color: var(--muted); text-decoration: none; border-radius: 8px; font-size: 13px; }
+    nav a:hover { color: var(--text); background: var(--panel-2); }
+    main { max-width: 1100px; padding: 40px 56px 80px; }
+    h2 { margin: 40px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); font-size: 24px; }
+    h3 { margin: 26px 0 10px; font-size: 17px; }
+    p, li { color: #cdd2dc; }
+    .intro { max-width: 780px; }
+    .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .card { min-width: 0; padding: 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); }
+    .card.before { border-top: 3px solid var(--red); }
+    .card.after { border-top: 3px solid var(--green); }
+    .label { margin-bottom: 12px; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .before .label { color: #ef9a9a; }
+    .after .label { color: #8fe0c0; }
+    pre { margin: 0; padding: 14px; overflow-x: auto; border: 1px solid var(--border); border-radius: 9px; background: var(--code); color: #d7e0ff; font: 13px/1.55 ui-monospace, monospace; white-space: pre-wrap; }
+    code { padding: 2px 5px; border-radius: 5px; background: var(--code); color: #d7e0ff; font-family: ui-monospace, monospace; }
+    table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 13.5px; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+    th { background: var(--panel-2); color: var(--muted); }
+    .files { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .file { padding: 12px 14px; border: 1px solid var(--border); border-radius: 9px; background: var(--panel); }
+    .file strong { display: block; color: #b9caff; font: 12px ui-monospace, monospace; }
+    .file span { color: var(--muted); font-size: 13px; }
+    @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } aside { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--border); } main { padding: 24px 20px 60px; } .comparison, .files { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside>
+      <h1>Nixx</h1>
+      <p>Conversation removal report</p>
+      <nav>
+        <a href="#why">Why it changed</a>
+        <a href="#flow">Flow comparison</a>
+        <a href="#database">Database</a>
+        <a href="#runtime">Runtime and API</a>
+        <a href="#files">File-by-file changes</a>
+        <a href="#verification">Verification</a>
+      </nav>
+    </aside>
+    <main>
+      <h2 id="why">Why it changed</h2>
+      <p class="intro">The application created one conversation for every task and immediately created one thread for it. Because LangGraph state, messages, sandbox execution, Git branches, pull requests, URLs, and authorization all used the thread ID, the conversation entity added no separate behavior. The thread is now the single durable task identity.</p>
+
+      <h2 id="flow">Flow comparison</h2>
+      <div class="comparison">
+        <section class="card before">
+          <div class="label">Previous flow</div>
+          <pre>/app
+  │
+  ├─ POST /api/conversations
+  │    └─ create conversationId
+  │
+  ├─ POST /api/threads
+  │    └─ store conversationId
+  │
+  └─ /app/{threadId}
+       └─ pass both IDs
+
+Agent config:
+  thread_id
+  conversation_id
+
+Sandbox messages:
+  threadId
+  conversationId
+  sandboxId</pre>
+        </section>
+        <section class="card after">
+          <div class="label">Updated flow</div>
+          <pre>/app
+  │
+  ├─ POST /api/threads
+  │    └─ create threadId
+  │
+  └─ /app/{threadId}
+       └─ use threadId
+
+Agent config:
+  thread_id
+
+Sandbox messages:
+  threadId
+  sandboxId</pre>
+        </section>
+      </div>
+
+      <h2 id="database">Database changes</h2>
+      <div class="comparison">
+        <section class="card before">
+          <div class="label">Previous schema</div>
+          <pre>conversations
+  id
+  user_id
+  title
+  created_at
+  updated_at
+
+threads
+  id
+  conversation_id → conversations.id
+  user_id
+  sandbox_id
+  metadata
+  created_at
+  updated_at</pre>
+        </section>
+        <section class="card after">
+          <div class="label">Updated schema</div>
+          <pre>threads
+  id
+  user_id
+  sandbox_id
+  metadata
+  created_at
+  updated_at</pre>
+        </section>
+      </div>
+      <p>The new migration drops the foreign key, conversation index, <code>threads.conversation_id</code>, and <code>conversations</code> table. Existing migration history is preserved; the removal is represented by a new migration.</p>
+
+      <h2 id="runtime">Runtime and API changes</h2>
+      <table>
+        <thead><tr><th>Area</th><th>Previous</th><th>Updated</th></tr></thead>
+        <tbody>
+          <tr><td>Thread creation</td><td>Required <code>conversationId</code>.</td><td>Creates a thread directly from repository, branch, and title metadata.</td></tr>
+          <tr><td>Conversation API</td><td><code>/api/conversations</code> created and listed conversations.</td><td>Route deleted.</td></tr>
+          <tr><td>Thread detail</td><td>Returned <code>conversationId</code>.</td><td>Returns only thread data and messages.</td></tr>
+          <tr><td>Agent configuration</td><td>Passed <code>thread_id</code> and <code>conversation_id</code>.</td><td>Passes only <code>thread_id</code> plus sandbox and repository values.</td></tr>
+          <tr><td>Sandbox contracts</td><td>Carried both IDs through queues.</td><td>Carry only <code>threadId</code> and <code>sandboxId</code>.</td></tr>
+          <tr><td>Dashboard</td><td>Loaded and displayed separate conversations.</td><td>Loads and displays recent threads only.</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="files">File-by-file changes</h2>
+      <div class="files">
+        <div class="file"><strong>packages/db/src/schema.ts</strong><span>Removed the conversations table and thread foreign key.</span></div>
+        <div class="file"><strong>packages/db/drizzle/*remove_conversations/migration.sql</strong><span>Drops the old table, column, index, and constraint.</span></div>
+        <div class="file"><strong>apps/web/app/api/threads/route.ts</strong><span>Creates threads without a conversation ID.</span></div>
+        <div class="file"><strong>apps/web/app/api/conversations/route.ts</strong><span>Deleted the obsolete conversation API.</span></div>
+        <div class="file"><strong>apps/web/app/api/threads/[threadId]/*</strong><span>Removed conversation values from detail, run, and stream routes.</span></div>
+        <div class="file"><strong>apps/web/app/app/*</strong><span>Removed conversation loading, creation, state, links, and styles.</span></div>
+        <div class="file"><strong>apps/web/app/lib/agent-brain.ts</strong><span>Removed conversation configuration from agent calls.</span></div>
+        <div class="file"><strong>packages/contracts/src/messages.ts</strong><span>Removed conversation fields from sandbox messages.</span></div>
+        <div class="file"><strong>packages/agent/programmer/*</strong><span>Stopped reading or forwarding conversation configuration.</span></div>
+        <div class="file"><strong>apps/sandbox-worker/src/main.ts</strong><span>Stopped emitting conversation data in results.</span></div>
+      </div>
+
+      <h2 id="verification">Verification</h2>
+      <ul>
+        <li><code>bun run check-types</code> passed.</li>
+        <li><code>bun run lint</code> passed.</li>
+        <li><code>bun run build</code> passed.</li>
+        <li>The production route manifest contains thread routes but no <code>/api/conversations</code> route.</li>
+      </ul>
+    </main>
+  </div>
+</body>
+</html>
