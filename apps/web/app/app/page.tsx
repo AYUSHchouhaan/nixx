@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "../lib/auth";
 import { db } from "@repo/db";
-import { conversations, threads } from "@repo/db/schema";
+import { threads } from "@repo/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { AppShell } from "./app-shell";
 
@@ -20,32 +20,17 @@ export default async function AppPage() {
     redirect("/login");
   }
 
-  const conversationRows = await db
+  const threadRows = await db
     .select()
-    .from(conversations)
-    .where(eq(conversations.userId, session.user.id))
-    .orderBy(desc(conversations.updatedAt));
+    .from(threads)
+    .where(eq(threads.userId, session.user.id))
+    .orderBy(desc(threads.updatedAt));
 
-  const threadRows = conversationRows.length
-    ? await db
-        .select()
-        .from(threads)
-        .where(eq(threads.userId, session.user.id))
-        .orderBy(desc(threads.updatedAt))
-    : [];
-
-  const initialConversations = conversationRows.map((row) => ({
-    id: row.id,
-    title: row.title,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-  }));
 
   const initialThreads = threadRows.map((row) => {
     const metadata = (row.metadata ?? {}) as Record<string, unknown>;
     return {
       id: row.id,
-      conversationId: row.conversationId,
       title: typeof metadata.title === "string" ? metadata.title : null,
       repoUrl: typeof metadata.repoUrl === "string" ? metadata.repoUrl : null,
       branch: typeof metadata.branch === "string" ? metadata.branch : null,
@@ -55,9 +40,6 @@ export default async function AppPage() {
   });
 
   return (
-    <AppShell
-      initialConversations={initialConversations}
-      initialThreads={initialThreads}
-    />
+    <AppShell initialThreads={initialThreads} />
   );
 }

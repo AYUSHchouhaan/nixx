@@ -56,10 +56,4 @@
 .listMeta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-3); font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 11px; }
 .empty { display: flex; align-items: center; gap: 10px; padding: 17px; border: 1px dashed var(--border-strong); border-radius: 10px; color: var(--ink-3); font-size: 13px; }
 .emptyIcon { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border-strong); border-radius: 6px; font-size: 16px; line-height: 1; }
-.conversationLine { display: flex; justify-content: space-between; gap: 12px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--ink-3); font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 11px; }
-.conversationList { list-style: none; margin-top: 8px; }
-.conversationLink { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; color: var(--ink-2); font-size: 12px; border-bottom: 1px solid var(--border); }
-.conversationLink span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.conversationLink span:last-child { flex-shrink: 0; color: var(--ink-3); font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 10px; }
-.conversationLink:hover { color: var(--ink); }
 @media (max-width: 620px) { .main { padding: 40px 16px 64px; } .selectRow { flex-direction: column; } .threadGrid { grid-template-columns: 1fr; } .navInner { padding: 0 16px; } .status { display: none; } }

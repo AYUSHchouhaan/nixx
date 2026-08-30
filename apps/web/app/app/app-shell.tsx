@@ -20,16 +20,8 @@ type Branch = {
   name: string;
 };
 
-type Conversation = {
-  id: string;
-  title: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
 type Thread = {
   id: string;
-  conversationId: string;
   title: string | null;
   repoUrl: string | null;
   branch: string | null;
@@ -38,10 +30,8 @@ type Thread = {
 };
 
 export function AppShell({
-  initialConversations,
   initialThreads,
 }: {
-  initialConversations: Conversation[];
   initialThreads: Thread[];
 }) {
   const router = useRouter();
@@ -55,7 +45,6 @@ export function AppShell({
   const [branchLoading, setBranchLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [conversations] = useState<Conversation[]>(initialConversations);
   const [threads] = useState<Thread[]>(initialThreads);
 
   useEffect(() => {
@@ -131,19 +120,10 @@ export function AppShell({
     setLoading(true);
     setError(null);
     try {
-      const conversationRes = await fetch("/api/conversations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: prompt.trim().slice(0, 60) }),
-      });
-      if (!conversationRes.ok) throw new Error("Failed to create conversation");
-      const conversation = (await conversationRes.json()) as { id: string };
-
       const threadRes = await fetch("/api/threads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          conversationId: conversation.id,
           repoUrl: selectedRepo.clone_url,
           branch: selectedBranch,
           title: prompt.trim().slice(0, 60),
@@ -284,22 +264,6 @@ export function AppShell({
               ))}
             </ul>
           )}
-
-            {conversations.length > 0 ? (
-              <div className={styles.conversationBlock}>
-                <div className={styles.conversationLine}><span>Conversations</span><span>{conversations.length} saved</span></div>
-                <ul className={styles.conversationList}>
-                  {conversations.slice(0, 3).map((conversation) => (
-                    <li key={conversation.id}>
-                      <Link href={`/app/${conversation.id}`} className={styles.conversationLink}>
-                        <span>{conversation.title ?? "Conversation"}</span>
-                        <span>{new Date(conversation.updatedAt).toLocaleDateString()}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
           </section>
       </main>
     </div>
