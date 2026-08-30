@@ -18,7 +18,6 @@ export async function sandboxCall(
 ): Promise<SandboxCallResult> {
   return deps.sandboxClient.call({
     threadId: getConfigurableId(config, "thread_id"),
-    conversationId: getConfigurableId(config, "conversation_id"),
     sandboxId: getConfigurableId(config, "sandbox_id"),
     command,
     args,

@@ -9,7 +9,6 @@ async function runGit(
 ): Promise<SandboxCallResult> {
   return sandboxClient.call({
     threadId: getConfigurableString(config, "thread_id"),
-    conversationId: getConfigurableString(config, "conversation_id"),
     sandboxId: getConfigurableString(config, "sandbox_id"),
     command: "git",
     args: { args },

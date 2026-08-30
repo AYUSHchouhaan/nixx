@@ -7,7 +7,7 @@ export async function endConclusionNode(
 ): Promise<Partial<ProgrammerState>> {
   const llm = createChatModel();
 
-  const conversationSummary = state.messages
+  const sessionSummary = state.messages
     .slice(-40)
     .map((m) => {
       const type = m.getType();
@@ -26,7 +26,7 @@ export async function endConclusionNode(
       "You are summarising a completed coding session. Write a clear, concise summary of what was done.",
     ),
     new HumanMessage(
-      `Original Query: "${state.query}"\n\nKey Events:\n${conversationSummary}\n\nWrite the final summary now.`,
+      `Original Query: "${state.query}"\n\nKey Events:\n${sessionSummary}\n\nWrite the final summary now.`,
     ),
   ]);
 
