@@ -36,7 +36,6 @@ export async function GET(
   return NextResponse.json({
     thread: {
       id: thread.id,
-      conversationId: thread.conversationId,
       sandboxId: thread.sandboxId,
       metadata,
       createdAt: thread.createdAt,

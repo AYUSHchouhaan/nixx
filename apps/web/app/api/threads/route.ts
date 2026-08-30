@@ -15,24 +15,16 @@ export async function POST(request: Request) {
   }
 
   const body = (await request.json()) as {
-    conversationId: string;
     sandboxId?: string;
     repoUrl?: string;
     branch?: string;
     title?: string;
   };
 
-  if (!body.conversationId) {
-    return NextResponse.json(
-      { error: "conversationId is required" },
-      { status: 400 },
-    );
-  }
 
   const id = randomUUID();
   await db.insert(threads).values({
     id,
-    conversationId: body.conversationId,
     userId: session.user.id,
     sandboxId: body.sandboxId ?? null,
     metadata: {
