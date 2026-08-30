@@ -60,7 +60,6 @@ export async function POST(
 
     const { summary } = await runAgent({
       threadId,
-      conversationId: thread.conversationId,
       sandboxId,
       query: body.query,
       notes: body.notes,

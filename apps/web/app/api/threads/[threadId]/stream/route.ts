@@ -36,7 +36,6 @@ export async function POST(
       notes?: string;
       repoUrl?: string;
       branch?: string;
-      conversationId?: string;
       multitask_strategy?: "reject" | "rollback" | "interrupt";
     } | null;
     config?: {
@@ -105,7 +104,6 @@ export async function POST(
 
     stream = streamAgent({
       threadId,
-      conversationId: thread.conversationId,
       sandboxId,
       query,
       notes,
