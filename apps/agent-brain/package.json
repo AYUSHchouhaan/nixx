@@ -7,7 +7,8 @@
     "dev": "langgraphjs dev --config langgraph.json --port 4000",
     "start": "langgraphjs dev --config langgraph.json --port 4000",
     "check-types": "tsc --noEmit",
-    "langgraph:dev": "langgraphjs dev --config langgraph.json --port 4000"
+    "langgraph:dev": "langgraphjs dev --config langgraph.json --port 4000",
+    "test:server": "bun run scripts/test-server.ts"
   },
   "dependencies": {
     "@repo/agent": "*",
