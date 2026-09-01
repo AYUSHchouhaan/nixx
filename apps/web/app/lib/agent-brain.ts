@@ -68,11 +68,35 @@ export function streamAgent(input: {
   }) as AsyncGenerator<AgentStreamChunk>;
 }
 
-export async function getThreadMessages(threadId: string) {
+export type ThreadMessage = {
+  id?: string;
+  type: "human" | "ai" | "tool" | "system";
+  content: string | Array<{ type: string; text?: string }>;
+  tool_calls?: Array<{ id?: string; name: string; args: unknown }>;
+  tool_call_id?: string;
+};
+
+function isThreadMessage(value: unknown): value is ThreadMessage {
+  if (typeof value !== "object" || value === null || !("type" in value) || !("content" in value)) {
+    return false;
+  }
+
+  return (
+    ["human", "ai", "tool", "system"].includes(String(value.type)) &&
+    (typeof value.content === "string" || Array.isArray(value.content))
+  );
+}
+
+export async function getThreadMessages(threadId: string): Promise<ThreadMessage[]> {
   try {
     const state = await client.threads.getState(threadId);
-    const values = (state.values ?? {}) as { messages?: unknown[] };
-    return Array.isArray(values.messages) ? values.messages : [];
+    const values = state.values;
+    if (typeof values !== "object" || values === null || !("messages" in values)) {
+      return [];
+    }
+
+    const messages = values.messages;
+    return Array.isArray(messages) ? messages.filter(isThreadMessage) : [];
   } catch {
     return [];
   }
