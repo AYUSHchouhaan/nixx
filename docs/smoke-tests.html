@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nixx — Smoke Tests</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --panel-2: #1e222c;
+      --border: #2a2f3a;
+      --text: #e6e8ee;
+      --muted: #9aa3b2;
+      --accent: #4f8cff;
+      --accent-2: #7c5cff;
+      --code-bg: #12151b;
+      --green: #3fb68b;
+      --amber: #e0a458;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .wrap {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 28px 20px;
+      border-right: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    aside h1 { font-size: 18px; margin: 0 0 6px; letter-spacing: -0.02em; }
+    aside .sub { color: var(--muted); font-size: 13px; margin: 0 0 24px; }
+
+    aside nav a {
+      display: block;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      margin-bottom: 2px;
+    }
+
+    aside nav a:hover { color: var(--text); background: var(--panel-2); }
+
+    main { padding: 40px 56px 80px; max-width: 960px; }
+
+    h2 {
+      font-size: 24px;
+      letter-spacing: -0.02em;
+      margin: 48px 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h3 { font-size: 18px; margin: 28px 0 10px; }
+    p { color: #cdd2dc; margin: 10px 0; }
+
+    code {
+      background: var(--code-bg);
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+      font-size: 13px;
+      color: #d7e0ff;
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    pre code { background: none; padding: 0; color: #d7e0ff; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13.5px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th { color: var(--muted); font-weight: 600; background: var(--panel-2); }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(79, 140, 255, 0.14);
+      color: #9dbdff;
+    }
+
+    .badge.green { background: rgba(63, 182, 139, 0.14); color: #8fe0c2; }
+    .badge.amber { background: rgba(224, 164, 88, 0.14); color: #ecc68a; }
+
+    .diagram {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      overflow-x: auto;
+      font-family: ui-monospace, "Cascadia Code", monospace;
+      font-size: 12.5px;
+      color: #aeb6c4;
+      white-space: pre;
+    }
+
+    .note {
+      border-left: 3px solid var(--amber);
+      background: rgba(224, 164, 88, 0.08);
+      padding: 10px 14px;
+      border-radius: 0 10px 10px 0;
+      margin: 16px 0;
+      color: #e6c99c;
+    }
+
+    @media (max-width: 800px) {
+      .wrap { grid-template-columns: 1fr; }
+      aside { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+      main { padding: 24px 20px 60px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <aside>
+      <h1>Nixx</h1>
+      <p class="sub">Smoke Tests</p>
+      <nav>
+        <a href="#overview">Overview</a>
+        <a href="#inventory">Test Inventory</a>
+        <a href="#redis">Redis / BullMQ</a>
+        <a href="#sandbox">Sandbox (Daytona)</a>
+        <a href="#server">LangGraph Server</a>
+        <a href="#env">Environment</a>
+        <a href="#verify">Verification</a>
+      </nav>
+    </aside>
+
+    <main>
+      <h2 id="overview">Overview</h2>
+      <p>
+        Three standalone smoke tests verify that the agent's supporting infrastructure actually works.
+        Each is a single Bun script that connects to the real backend, performs a minimal end-to-end
+        check, and exits non-zero on failure.
+      </p>
+
+      <div class="diagram">┌─────────────────────┐      ┌──────────────────────┐
+│  test-sandbox.ts     │─────▶│   Daytona API         │
+│  (sandbox-worker)    │      │   create + echo run   │
+└─────────────────────┘      └──────────────────────┘
+
+┌─────────────────────┐      ┌──────────────────────┐
+│  test-redis.ts       │─────▶│   Redis (BullMQ)      │
+│  (contracts)         │      │   ping + job roundtrip│
+└─────────────────────┘      └──────────────────────┘
+
+┌─────────────────────┐      ┌──────────────────────┐
+│  test-server.ts      │─────▶│   LangGraph server    │
+│  (agent-brain)       │      │   /ok + coding graph  │
+└─────────────────────┘      └──────────────────────┘</div>
+
+      <p>Each test follows the existing <code>packages/db/scripts/test-db.ts</code> pattern: a single
+      <code>main()</code> that logs a clear pass/fail line and calls <code>process.exit(0)</code> or
+      <code>process.exit(1)</code>.</p>
+
+      <h2 id="inventory">Test Inventory</h2>
+      <table>
+        <thead>
+          <tr><th>Package / App</th><th>Script</th><th>File</th><th>Verifies</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>packages/contracts</code></td>
+            <td><code>test:redis</code></td>
+            <td><code>scripts/test-redis.ts</code></td>
+            <td>Redis reachability + BullMQ enqueue/read round-trip</td>
+          </tr>
+          <tr>
+            <td><code>apps/sandbox-worker</code></td>
+            <td><code>test:sandbox</code></td>
+            <td><code>scripts/test-sandbox.ts</code></td>
+            <td>Daytona sandbox create + command execution</td>
+          </tr>
+          <tr>
+            <td><code>apps/agent-brain</code></td>
+            <td><code>test:server</code></td>
+            <td><code>scripts/test-server.ts</code></td>
+            <td>LangGraph server <code>/ok</code>, <code>/info</code>, and <code>coding</code> assistant</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 id="redis">Redis / BullMQ</h2>
+      <p>File: <code>packages/contracts/scripts/test-redis.ts</code></p>
+      <pre><code>bun run test:redis --filter=@repo/contracts</code></pre>
+      <p>Behavior:</p>
+      <ul>
+        <li>Connects using <code>REDIS_HOST</code> / <code>REDIS_PORT</code> (default <code>localhost:6379</code>).</li>
+        <li>Calls <code>queue.waitUntilReady()</code> with a 10-second deadline so a missing Redis fails fast instead of hanging.</li>
+        <li>Reads <code>queue.redisVersion</code> to confirm the connection is live.</li>
+        <li>Enqueues a smoke job and reads it back with <code>queue.getJob(...)</code> to prove write/read works.</li>
+        <li>Removes the job and obliterates the throwaway <code>agent-to-sandbox-test</code> queue.</li>
+      </ul>
+
+      <h2 id="sandbox">Sandbox (Daytona)</h2>
+      <p>File: <code>apps/sandbox-worker/scripts/test-sandbox.ts</code></p>
+      <pre><code>bun run test:sandbox --filter=sandbox-worker</code></pre>
+      <p>Requires <code>DAYTONA_API_KEY</code>. Behavior:</p>
+      <ul>
+        <li>Creates a sandbox named <code>nixx-smoke-&lt;timestamp&gt;</code> using the production <code>DEFAULT_SANDBOX_CREATE_PARAMS</code>.</li>
+        <li>Runs <code>echo nixx-ok</code> inside it and asserts the output matches.</li>
+        <li>Deletes the sandbox in a <code>finally</code> block so cleanup happens even on failure.</li>
+      </ul>
+
+      <h2 id="server">LangGraph Server</h2>
+      <p>File: <code>apps/agent-brain/scripts/test-server.ts</code> (server must already be running).</p>
+      <pre><code>bun run test:server --filter=agent-brain</code></pre>
+      <p>Targets <code>AGENT_BRAIN_URL</code> (default <code>http://localhost:4000</code>). Behavior:</p>
+      <ul>
+        <li>GETs <code>/ok</code> and asserts <code>{ ok: true }</code>.</li>
+        <li>GETs <code>/info</code> and logs feature flags.</li>
+        <li>POSTs to <code>/assistants/search</code> with <code>{ graph_id: "coding" }</code> and asserts the assistant exists.</li>
+      </ul>
+
+      <h2 id="env">Environment</h2>
+      <table>
+        <thead><tr><th>Variable</th><th>Default</th><th>Used by</th></tr></thead>
+        <tbody>
+          <tr><td><code>REDIS_HOST</code></td><td><code>localhost</code></td><td>Redis test</td></tr>
+          <tr><td><code>REDIS_PORT</code></td><td><code>6379</code></td><td>Redis test</td></tr>
+          <tr><td><code>DAYTONA_API_KEY</code></td><td>(required)</td><td>Sandbox test</td></tr>
+          <tr><td><code>DAYTONA_API_URL</code></td><td><code>https://app.daytona.io/api</code></td><td>Sandbox test (via SDK)</td></tr>
+          <tr><td><code>AGENT_BRAIN_URL</code></td><td><code>http://localhost:4000</code></td><td>Server test</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="verify">Verification</h2>
+      <p>All three scripts typecheck cleanly with <code>tsc</code> (exit 0). The Redis test was exercised against
+      an environment without a running Redis instance and correctly failed fast:</p>
+      <pre><code>❌ Redis/BullMQ connection test failed: Could not reach Redis at localhost:6379 within 10000ms — is it running?</code></pre>
+      <div class="note">The sandbox and server tests require their respective backends (Daytona API, LangGraph server) to be running to exercise the real paths.</div>
+    </main>
+  </div>
+</body>
+</html>
