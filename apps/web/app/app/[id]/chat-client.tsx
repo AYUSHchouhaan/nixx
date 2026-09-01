@@ -4,70 +4,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useStream, FetchStreamTransport } from "@langchain/langgraph-sdk/react";
+import {
+  type AgentInput,
+  type ChatMessage,
+  type ChatState,
+  chatMessageArraySchema,
+} from "../../lib/agent-types";
 import styles from "./chat.module.css";
 
-type MessageContent = string | Array<{ type: string; text?: string }>;
-
-export type ChatMessage = {
-  id?: string;
-  type: "human" | "ai" | "tool" | "system";
-  content: MessageContent;
-  tool_calls?: Array<{ id?: string; name: string; args: unknown }>;
-  tool_call_id?: string;
-};
-
-type StreamMessage = {
-  type: string;
-  content: unknown;
-  id?: string;
-  tool_calls?: Array<{ id?: string; name: string; args: unknown }>;
-  tool_call_id?: string;
-};
-
-type ChatMessageType = ChatMessage["type"];
-
-function isChatMessage(message: StreamMessage): message is StreamMessage & { type: ChatMessageType } {
-  return ["human", "ai", "tool", "system"].includes(message.type);
-}
-
-function toChatMessages(messages: StreamMessage[]): ChatMessage[] {
-  return messages.flatMap((message) => {
-    if (!isChatMessage(message)) return [];
-
-    const content =
-      typeof message.content === "string"
-        ? message.content
-        : Array.isArray(message.content)
-          ? message.content.flatMap((part) => {
-              if (typeof part !== "object" || part === null || !("type" in part)) return [];
-              const text = "text" in part && typeof part.text === "string" ? part.text : undefined;
-              return [{ type: String(part.type), text }];
-            })
-          : String(message.content);
-
-    return [{
-      id: message.id,
-      type: message.type,
-      content,
-      tool_calls: message.tool_calls,
-      tool_call_id: message.tool_call_id,
-    }];
-  });
-}
-
-type ChatState = {
-  messages: ChatMessage[];
-};
-
-type AgentInput = {
-  query: string;
-  notes: string;
-  repoUrl: string;
-  branch: string;
-  multitask_strategy: "interrupt";
-};
-
-function contentToText(content: MessageContent): string {
+function contentToText(content: ChatMessage["content"]): string {
   if (typeof content === "string") return content;
   return content
     .map((part) => part.text ?? "")
@@ -116,13 +61,14 @@ export function ChatClient({
 
     setError(null);
     try {
-      await stream.submit({
+      const input: AgentInput = {
         query: text,
         notes: "",
         repoUrl,
         branch,
         multitask_strategy: "interrupt",
-      } satisfies AgentInput);
+      };
+      await stream.submit(input);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to run agent");
     }
@@ -144,20 +90,25 @@ export function ChatClient({
     ]);
     router.replace(`/app/${threadId}`, { scroll: false });
 
-    void stream.submit({
+    const input: AgentInput = {
       query: initialPrompt,
       notes: "",
       repoUrl,
       branch,
       multitask_strategy: "interrupt",
-    } satisfies AgentInput).catch((err: unknown) => {
+    };
+
+    void stream.submit(input).catch((err: unknown) => {
       setError(err instanceof Error ? err.message : "Failed to run agent");
     });
   }, [branch, initialMessages.length, initialPrompt, repoUrl, router, stream, threadId]);
 
   useEffect(() => {
     if (stream.messages.length > 0) {
-      setMessages(toChatMessages(stream.messages));
+      const parsed = chatMessageArraySchema.safeParse(stream.messages);
+      if (parsed.success) {
+        setMessages(parsed.data);
+      }
     }
   }, [stream.messages]);
 
@@ -277,4 +228,3 @@ function MessageRow({ message }: { message: ChatMessage }) {
     </div>
   );
 }
-

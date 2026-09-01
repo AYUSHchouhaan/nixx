@@ -9,29 +9,28 @@ import {
   type AgentStreamChunk,
 } from "../../../../lib/agent-brain";
 import { createInstallationToken } from "../../../../lib/github-installation";
+import {
+  type MultitaskStrategy,
+  streamRequestBodySchema,
+  threadMetadataSchema,
+} from "../../../../lib/agent-types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type MultitaskStrategy = "reject" | "rollback" | "interrupt";
+interface StreamBuild {
+  threadId: string;
+  sandboxId: string;
+  query: string;
+  notes: string;
+  repoUrl: string;
+  branch: string;
+  multitaskStrategy?: MultitaskStrategy;
+}
 
-type StreamRequestBody = {
-  input?: {
-    query?: string;
-    notes?: string;
-    repoUrl?: string;
-    branch?: string;
-    multitask_strategy?: MultitaskStrategy;
-  } | null;
-  config?: {
-    configurable?: Record<string, unknown>;
-  };
-  multitask_strategy?: MultitaskStrategy;
-  query?: string;
-  notes?: string;
-  repoUrl?: string;
-  branch?: string;
-};
+type StreamResult =
+  | { ok: true; stream: AsyncGenerator<AgentStreamChunk> }
+  | { ok: false; response: Response };
 
 const SSE_HEADERS = {
   "Content-Type": "text/event-stream; charset=utf-8",
@@ -46,32 +45,7 @@ function encode(event: string, data: unknown): Uint8Array {
   );
 }
 
-/** Returns the first non-empty string among the candidates, or "". */
-function firstString(...candidates: unknown[]): string {
-  for (const candidate of candidates) {
-    if (typeof candidate === "string" && candidate.length > 0) {
-      return candidate;
-    }
-  }
-  return "";
-}
-
-type StreamBuild = {
-  threadId: string;
-  sandboxId: string;
-  query: string;
-  notes: string;
-  repoUrl: string;
-  branch: string;
-  multitaskStrategy?: MultitaskStrategy;
-};
-
-async function buildStream(
-  input: StreamBuild,
-): Promise<
-  | { ok: true; stream: AsyncGenerator<AgentStreamChunk> }
-  | { ok: false; response: Response }
-> {
+async function buildStream(input: StreamBuild): Promise<StreamResult> {
   try {
     const installationId = await getGitHubInstallationId();
     if (!installationId) {
@@ -122,7 +96,7 @@ export async function POST(
   }
 
   const { threadId } = await params;
-  const body = (await request.json()) as StreamRequestBody;
+  const body = streamRequestBodySchema.parse(await request.json());
 
   const query = body.input?.query ?? body.query ?? "";
   const notes = body.input?.notes ?? body.notes ?? "";
@@ -141,21 +115,18 @@ export async function POST(
     return new Response("Thread not found", { status: 404 });
   }
 
-  const metadata = (thread.metadata ?? {}) as Record<string, unknown>;
+  const metadata = threadMetadataSchema.parse(thread.metadata ?? {});
   const configurable = body.config?.configurable ?? {};
 
-  const repoUrl = firstString(
-    configurable.repo_url,
-    body.input?.repoUrl,
-    body.repoUrl,
-    metadata.repoUrl,
-  );
-  const branch = firstString(
-    configurable.branch,
-    body.input?.branch,
-    body.branch,
-    metadata.branch,
-  );
+  const repoUrl =
+    typeof configurable.repo_url === "string" && configurable.repo_url
+      ? configurable.repo_url
+      : body.input?.repoUrl ?? body.repoUrl ?? metadata.repoUrl ?? "";
+
+  const branch =
+    typeof configurable.branch === "string" && configurable.branch
+      ? configurable.branch
+      : body.input?.branch ?? body.branch ?? metadata.branch ?? "";
 
   if (!repoUrl) {
     return new Response("repoUrl is required", { status: 400 });

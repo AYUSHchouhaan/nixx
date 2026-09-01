@@ -5,7 +5,8 @@ import { auth } from "../../lib/auth";
 import { db } from "@repo/db";
 import { threads } from "@repo/db/schema";
 import { eq } from "drizzle-orm";
-import { getThreadMessages, type ThreadMessage } from "../../lib/agent-brain";
+import { getThreadMessages } from "../../lib/agent-brain";
+import { type ChatMessage, threadMetadataSchema } from "../../lib/agent-types";
 import { ChatClient } from "./chat-client";
 
 export const metadata: Metadata = {
@@ -40,17 +41,14 @@ export default async function ThreadPage({
     notFound();
   }
 
-  const metadata = (thread.metadata ?? {}) as Record<string, unknown>;
-  const initialMessages: ThreadMessage[] = await getThreadMessages(id);
-
-  const repoUrl = typeof metadata.repoUrl === "string" ? metadata.repoUrl : "";
-  const branch = typeof metadata.branch === "string" ? metadata.branch : "";
+  const metadata = threadMetadataSchema.parse(thread.metadata ?? {});
+  const initialMessages: ChatMessage[] = await getThreadMessages(id);
 
   return (
     <ChatClient
       threadId={id}
-      repoUrl={repoUrl}
-      branch={branch}
+      repoUrl={metadata.repoUrl ?? ""}
+      branch={metadata.branch ?? ""}
       initialMessages={initialMessages}
       initialPrompt={prompt ?? ""}
     />
