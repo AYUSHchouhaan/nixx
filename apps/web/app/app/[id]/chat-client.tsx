@@ -1,13 +1,14 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useStream, FetchStreamTransport } from "@langchain/langgraph-sdk/react";
 import styles from "./chat.module.css";
 
 type MessageContent = string | Array<{ type: string; text?: string }>;
 
-type ChatMessage = {
+export type ChatMessage = {
   id?: string;
   type: "human" | "ai" | "tool" | "system";
   content: MessageContent;
@@ -15,31 +16,55 @@ type ChatMessage = {
   tool_call_id?: string;
 };
 
-type ToolCall = {
-  id: string;
-  name: string;
-  args: unknown;
+type StreamMessage = {
+  type: string;
+  content: unknown;
+  id?: string;
+  tool_calls?: Array<{ id?: string; name: string; args: unknown }>;
+  tool_call_id?: string;
 };
 
-type ToolResult = {
-  content: MessageContent;
-  status?: string;
-};
+type ChatMessageType = ChatMessage["type"];
 
-type ToolCallWithResult = {
-  id: string;
-  call: ToolCall;
-  result?: ToolResult;
-  state: "pending" | "completed" | "error";
-};
+function isChatMessage(message: StreamMessage): message is StreamMessage & { type: ChatMessageType } {
+  return ["human", "ai", "tool", "system"].includes(message.type);
+}
 
-type AgentStream = {
+function toChatMessages(messages: StreamMessage[]): ChatMessage[] {
+  return messages.flatMap((message) => {
+    if (!isChatMessage(message)) return [];
+
+    const content =
+      typeof message.content === "string"
+        ? message.content
+        : Array.isArray(message.content)
+          ? message.content.flatMap((part) => {
+              if (typeof part !== "object" || part === null || !("type" in part)) return [];
+              const text = "text" in part && typeof part.text === "string" ? part.text : undefined;
+              return [{ type: String(part.type), text }];
+            })
+          : String(message.content);
+
+    return [{
+      id: message.id,
+      type: message.type,
+      content,
+      tool_calls: message.tool_calls,
+      tool_call_id: message.tool_call_id,
+    }];
+  });
+}
+
+type ChatState = {
   messages: ChatMessage[];
-  toolCalls: ToolCallWithResult[];
-  isLoading: boolean;
-  error: unknown;
-  submit: (values: unknown, options?: unknown) => Promise<void>;
-  stop: () => Promise<void>;
+};
+
+type AgentInput = {
+  query: string;
+  notes: string;
+  repoUrl: string;
+  branch: string;
+  multitask_strategy: "interrupt";
 };
 
 function contentToText(content: MessageContent): string {
@@ -52,19 +77,22 @@ function contentToText(content: MessageContent): string {
 
 export function ChatClient({
   threadId,
-  initialPrompt,
   repoUrl,
   branch,
   initialMessages,
+  initialPrompt,
 }: {
   threadId: string;
-  initialPrompt: string;
   repoUrl: string;
   branch: string;
   initialMessages: ChatMessage[];
+  initialPrompt: string;
 }) {
-  const [draft, setDraft] = useState(initialPrompt);
+  const router = useRouter();
+  const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const initialPromptConsumed = useRef(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const transport = useMemo(
@@ -75,14 +103,12 @@ export function ChatClient({
     [threadId],
   );
 
-  const stream = useStream({
-    assistantId: "coding",
+  const stream = useStream<ChatState>({
     messagesKey: "messages",
     transport,
     threadId,
     initialValues: { messages: initialMessages },
-    fetchStateHistory: false,
-  } as never) as unknown as AgentStream;
+  });
 
   const submit = useCallback(async () => {
     const text = draft.trim();
@@ -96,19 +122,44 @@ export function ChatClient({
         repoUrl,
         branch,
         multitask_strategy: "interrupt",
-      });
+      } satisfies AgentInput);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to run agent");
     }
     setDraft("");
   }, [draft, stream, repoUrl, branch]);
 
-  const messages: ChatMessage[] =
-    stream.messages.length > 0
-      ? (stream.messages as ChatMessage[])
-      : initialMessages;
+  useEffect(() => {
+    if (initialPromptConsumed.current || initialMessages.length > 0 || !initialPrompt) {
+      return;
+    }
 
-  const toolCalls = (stream.toolCalls ?? []) as ToolCallWithResult[];
+    initialPromptConsumed.current = true;
+    setMessages([
+      {
+        id: `initial-${threadId}`,
+        type: "human",
+        content: initialPrompt,
+      },
+    ]);
+    router.replace(`/app/${threadId}`, { scroll: false });
+
+    void stream.submit({
+      query: initialPrompt,
+      notes: "",
+      repoUrl,
+      branch,
+      multitask_strategy: "interrupt",
+    } satisfies AgentInput).catch((err: unknown) => {
+      setError(err instanceof Error ? err.message : "Failed to run agent");
+    });
+  }, [branch, initialMessages.length, initialPrompt, repoUrl, router, stream, threadId]);
+
+  useEffect(() => {
+    if (stream.messages.length > 0) {
+      setMessages(toChatMessages(stream.messages));
+    }
+  }, [stream.messages]);
 
   return (
     <div className={styles.shell}>
@@ -144,9 +195,6 @@ export function ChatClient({
             <div className={styles.messages}>
               {messages.map((message, index) => (
                 <MessageRow key={message.id ?? index} message={message} />
-              ))}
-              {toolCalls.map((toolCall) => (
-                <ToolCallRow key={toolCall.id} toolCall={toolCall} />
               ))}
               {stream.isLoading ? (
                 <div className={styles.thinking}>
@@ -230,32 +278,3 @@ function MessageRow({ message }: { message: ChatMessage }) {
   );
 }
 
-function ToolCallRow({ toolCall }: { toolCall: ToolCallWithResult }) {
-  const status =
-    toolCall.state === "completed"
-      ? "done"
-      : toolCall.state === "error"
-        ? "error"
-        : "running";
-
-  return (
-    <div className={styles.toolRow}>
-      <div className={styles.toolCallBubble}>
-        <span className={styles.role}>
-          Tool <code className={styles.toolName}>{toolCall.call.name}</code>
-        </span>
-        <pre className={styles.code}>
-          {JSON.stringify(toolCall.call.args, null, 2)}
-        </pre>
-        {toolCall.result ? (
-          <pre className={styles.code}>
-            {contentToText(toolCall.result.content)}
-          </pre>
-        ) : null}
-        <span className={styles.status} data-state={status}>
-          {status}
-        </span>
-      </div>
-    </div>
-  );
-}

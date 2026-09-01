@@ -132,12 +132,8 @@ export function AppShell({
       if (!threadRes.ok) throw new Error("Failed to create thread");
       const thread = (await threadRes.json()) as { id: string };
 
-      const query = new URLSearchParams({
-        prompt: prompt.trim(),
-        repoUrl: selectedRepo.clone_url,
-        branch: selectedBranch,
-      });
-      router.push(`/app/${thread.id}?${query.toString()}`);
+      const params = new URLSearchParams({ prompt: prompt.trim() });
+      router.push(`/app/${thread.id}?${params.toString()}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setLoading(false);
