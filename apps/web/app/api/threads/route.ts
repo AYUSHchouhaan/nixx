@@ -4,6 +4,7 @@ import { auth } from "../../lib/auth";
 import { headers } from "next/headers";
 import { db } from "@repo/db";
 import { threads } from "@repo/db/schema";
+import { createAgentThread } from "../../lib/agent-brain";
 
 export async function POST(request: Request) {
   const session = await auth.api.getSession({
@@ -23,6 +24,8 @@ export async function POST(request: Request) {
 
 
   const id = randomUUID();
+  await createAgentThread(id);
+
   await db.insert(threads).values({
     id,
     userId: session.user.id,

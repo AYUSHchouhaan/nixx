@@ -12,6 +12,10 @@ const client = new Client<ThreadState>({ apiUrl: AGENT_BRAIN_URL });
 
 export const AGENT_ASSISTANT_ID = "coding";
 
+export async function createAgentThread(threadId: string) {
+  return client.threads.create({ threadId, ifExists: "do_nothing" });
+}
+
 export interface AgentStreamChunk {
   id?: string;
   event: string;
@@ -46,6 +50,7 @@ function buildConfig(input: AgentRunInput) {
 }
 
 export async function runAgent(input: AgentRunInput) {
+  await createAgentThread(input.threadId);
   const run = await client.runs.create(input.threadId, AGENT_ASSISTANT_ID, {
     input: { query: input.query, notes: input.notes ?? "" },
     config: buildConfig(input),
@@ -54,8 +59,12 @@ export async function runAgent(input: AgentRunInput) {
   return runSummarySchema.parse(result);
 }
 
-export function streamAgent(input: AgentRunInput): AsyncGenerator<AgentStreamChunk> {
-  return client.runs.stream(input.threadId, AGENT_ASSISTANT_ID, {
+export async function* streamAgent(
+  input: AgentRunInput,
+): AsyncGenerator<AgentStreamChunk> {
+  await createAgentThread(input.threadId);
+
+  yield* client.runs.stream(input.threadId, AGENT_ASSISTANT_ID, {
     input: { query: input.query, notes: input.notes ?? "" },
     config: buildConfig(input),
     multitaskStrategy: input.multitaskStrategy,
@@ -65,6 +74,7 @@ export function streamAgent(input: AgentRunInput): AsyncGenerator<AgentStreamChu
 
 export async function getThreadMessages(threadId: string): Promise<ChatMessage[]> {
   try {
+    await createAgentThread(threadId);
     const state = await client.threads.getState<ThreadState>(threadId);
     return threadStateSchema.parse(state.values).messages;
   } catch {
