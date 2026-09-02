@@ -21,6 +21,9 @@ const worker = new Worker(
   QUEUE_NAMES.agentToSandbox,
   async (job) => {
     const data = job.data as SandboxCommandMessage | SandboxProvisionMessage;
+    console.info(
+      `[sandbox-worker] received type=${data.type} commandId=${data.commandId}`,
+    );
 
     if (data.type === "provision") {
       const result = await provisionSandbox({
@@ -37,6 +40,9 @@ const worker = new Worker(
       };
 
       await sandboxToAgentQueue.add("provision_result", message);
+      console.info(
+        `[sandbox-worker] published type=provision_result commandId=${data.commandId} error=${result.error ?? "none"}`,
+      );
       return;
     }
 
@@ -59,6 +65,9 @@ const worker = new Worker(
     };
 
     await sandboxToAgentQueue.add("result", message);
+    console.info(
+      `[sandbox-worker] published type=result commandId=${data.commandId} exitCode=${result.exitCode} error=${result.error ?? "none"}`,
+    );
   },
   { connection: redisConnection },
 );
