@@ -77,7 +77,11 @@ export async function getThreadMessages(threadId: string): Promise<ChatMessage[]
     await createAgentThread(threadId);
     const state = await client.threads.getState<ThreadState>(threadId);
     return threadStateSchema.parse(state.values).messages;
-  } catch {
+  } catch (error) {
+    console.error(
+      `[stream] getThreadMessages failed for thread=${threadId}:`,
+      error,
+    );
     return [];
   }
 }
