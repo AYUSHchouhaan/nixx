@@ -96,7 +96,13 @@ export async function POST(
   }
 
   const { threadId } = await params;
-  const body = streamRequestBodySchema.parse(await request.json());
+
+  let body;
+  try {
+    body = streamRequestBodySchema.parse(await request.json());
+  } catch {
+    return new Response("Invalid request body", { status: 400 });
+  }
 
   const query = body.input?.query ?? body.query ?? "";
   const notes = body.input?.notes ?? body.notes ?? "";
