@@ -8,6 +8,7 @@ export default async function Home() {
     headers: await headers(),
   });
   const signedIn = Boolean(session);
+  const openAppHref = signedIn ? "/app" : "/login";
 
   return (
     <>
@@ -33,7 +34,7 @@ export default async function Home() {
                 Sign in
               </Link>
             )}
-            <Link href="/login" className={styles.buttonPrimary}>
+            <Link href={openAppHref} className={styles.buttonPrimary}>
               Open app
             </Link>
           </div>
@@ -52,7 +53,7 @@ export default async function Home() {
               you can review and merge.
             </p>
             <div className={styles.heroCta}>
-              <Link href="/login" className={styles.buttonPrimaryLarge}>
+              <Link href={openAppHref} className={styles.buttonPrimaryLarge}>
                 Open app
               </Link>
               <a href="#how-it-works" className={styles.buttonGhostLarge}>
@@ -161,7 +162,7 @@ export default async function Home() {
           <p className={styles.ctaSub}>
             Sign in with GitHub and give Nixx something to build.
           </p>
-          <Link href="/login" className={styles.buttonPrimaryLarge}>
+          <Link href={openAppHref} className={styles.buttonPrimaryLarge}>
             Open app
           </Link>
         </section>
