@@ -13,6 +13,10 @@ export async function createEmptyPrNode(
   const repoUrl = getConfigurableString(config, "repo_url");
   const installationToken = getConfigurableString(config, "installation_token");
 
+  if (state.pullRequest) {
+    return {};
+  }
+
   const branchValue = config.configurable?.branch;
   const branch =
     typeof branchValue === "string" && branchValue ? branchValue : undefined;
