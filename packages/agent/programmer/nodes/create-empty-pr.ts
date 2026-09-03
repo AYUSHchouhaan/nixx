@@ -1,7 +1,7 @@
 import type { RunnableConfig } from "@langchain/core/runnables";
 import type { ProgrammerState, ProgrammerGraphDeps } from "../types";
 import { getConfigurableString } from "../lib/config";
-import { createEmptyPullRequest } from "../lib/github";
+import { createBranchRef, createPullRequest } from "../lib/github";
 import { checkoutBranch, pushEmptyCommit } from "../lib/sandbox-git";
 
 export async function createEmptyPrNode(
@@ -21,15 +21,26 @@ export async function createEmptyPrNode(
   const branch =
     typeof branchValue === "string" && branchValue ? branchValue : undefined;
 
-  const pullRequest = await createEmptyPullRequest({
+  const branchName = `nixx/${threadId}`;
+
+  const { baseBranch } = await createBranchRef({
     repoUrl,
-    threadId,
+    branchName,
     installationToken,
     branch,
   });
 
-  await checkoutBranch(deps.sandboxClient, config, pullRequest.branchName);
-  await pushEmptyCommit(deps.sandboxClient, config, pullRequest.branchName);
+  await checkoutBranch(deps.sandboxClient, config, branchName);
+  await pushEmptyCommit(deps.sandboxClient, config, branchName);
+
+  const pullRequest = await createPullRequest({
+    repoUrl,
+    branchName,
+    baseBranch,
+    installationToken,
+    title: `Nixx — ${threadId}`,
+    body: "Opened by Nixx to collect changes for this coding session.",
+  });
 
   return {
     pullRequest: {

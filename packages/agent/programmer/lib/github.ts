@@ -10,14 +10,13 @@ function parseRepoUrl(repoUrl: string): { owner: string; repo: string } {
   return { owner, repo };
 }
 
-export async function createEmptyPullRequest(input: {
+export async function createBranchRef(input: {
   repoUrl: string;
-  threadId: string;
+  branchName: string;
   installationToken: string;
   branch?: string;
 }) {
   const { owner, repo } = parseRepoUrl(input.repoUrl);
-  const branchName = `nixx/${input.threadId}`;
   const octokit = new Octokit({ auth: input.installationToken });
 
   const { data: repoInfo } = await octokit.rest.repos.get({ owner, repo });
@@ -31,20 +30,34 @@ export async function createEmptyPullRequest(input: {
   await octokit.rest.git.createRef({
     owner,
     repo,
-    ref: `refs/heads/${branchName}`,
+    ref: `refs/heads/${input.branchName}`,
     sha: baseRef.object.sha,
   });
+
+  return { branchName: input.branchName, baseBranch };
+}
+
+export async function createPullRequest(input: {
+  repoUrl: string;
+  branchName: string;
+  baseBranch: string;
+  installationToken: string;
+  title: string;
+  body: string;
+}) {
+  const { owner, repo } = parseRepoUrl(input.repoUrl);
+  const octokit = new Octokit({ auth: input.installationToken });
 
   const { data: pr } = await octokit.rest.pulls.create({
     owner,
     repo,
-    title: `Nixx — ${input.threadId}`,
-    head: branchName,
-    base: baseBranch,
-    body: "Opened by Nixx to collect changes for this coding session.",
+    title: input.title,
+    head: input.branchName,
+    base: input.baseBranch,
+    body: input.body,
   });
 
-  return { number: pr.number, htmlUrl: pr.html_url, branchName };
+  return { number: pr.number, htmlUrl: pr.html_url, branchName: input.branchName };
 }
 
 export async function updatePullRequest(input: {
