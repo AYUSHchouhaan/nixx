@@ -8,6 +8,13 @@ import styles from "./app.module.css";
 
 const authClient = createAuthClient();
 
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "numeric",
+  day: "numeric",
+  timeZone: "UTC",
+});
+
 type Repository = {
   full_name: string;
   owner: { login: string };
@@ -114,7 +121,8 @@ export function AppShell({
     setSelectedRepo(repo ?? null);
   }, [repositories]);
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = useCallback(
+    async () => {
     if (!prompt.trim() || !selectedRepo || !selectedBranch) return;
 
     setLoading(true);
@@ -252,7 +260,7 @@ export function AppShell({
               {threads.map((thread) => (
                 <li key={thread.id} className={styles.threadCard}>
                   <Link href={`/app/${thread.id}`} className={styles.listLink}>
-                    <span className={styles.cardTop}><span className={styles.cardStatus}><span className={styles.threadDot} />Ready</span><span className={styles.cardTime}>{new Date(thread.updatedAt).toLocaleDateString()}</span></span>
+                    <span className={styles.cardTop}><span className={styles.cardStatus}><span className={styles.threadDot} />Ready</span><span className={styles.cardTime}>{dateFormatter.format(new Date(thread.updatedAt))}</span></span>
                     <span className={styles.listTitle}>{thread.title ?? "Untitled task"}</span>
                     <span className={styles.listMeta}>{thread.repoUrl ?? "GitHub repository"} / {thread.branch ?? "Default branch"}</span>
                   </Link>
