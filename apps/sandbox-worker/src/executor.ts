@@ -193,12 +193,16 @@ async function runCommand(
   }
 }
 
+function shellQuote(arg: string): string {
+  return `'${arg.replace(/'/g, `'\\''`)}'`;
+}
+
 async function runGit(
   sandbox: Sandbox,
   repoDir: string,
   args: string[],
 ): Promise<SandboxExecutionResult> {
-  const command = ["git", ...args].join(" ");
+  const command = ["git", ...args.map(shellQuote)].join(" ");
   return runCommand(sandbox, repoDir, command);
 }
 
