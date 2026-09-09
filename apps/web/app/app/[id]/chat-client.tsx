@@ -201,7 +201,6 @@ function MessageRow({ message }: { message: ChatMessage }) {
     return (
       <div className={styles.humanRow}>
         <div className={styles.humanBubble}>
-          <span className={styles.role}>You</span>
           <p className={styles.text}>{text}</p>
         </div>
       </div>
@@ -212,7 +211,6 @@ function MessageRow({ message }: { message: ChatMessage }) {
     return (
       <div className={styles.toolRow}>
         <div className={styles.toolBubble}>
-          <span className={styles.role}>Tool result</span>
           <pre className={styles.code}>{text}</pre>
         </div>
       </div>
@@ -222,7 +220,6 @@ function MessageRow({ message }: { message: ChatMessage }) {
   return (
     <div className={styles.aiRow}>
       <div className={styles.aiBubble}>
-        <span className={styles.role}>Agent</span>
         <p className={styles.text}>{text}</p>
       </div>
     </div>
