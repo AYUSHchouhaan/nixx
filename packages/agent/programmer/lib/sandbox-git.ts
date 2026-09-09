@@ -40,7 +40,17 @@ export async function checkoutBranch(
     "checkout",
     branchName,
   ]);
-  ensureSuccess(checkoutResult, "checkout");
+  if (checkoutResult.exitCode === 0 && !checkoutResult.error) {
+    return;
+  }
+
+  const createResult = await runGit(sandboxClient, config, [
+    "checkout",
+    "-b",
+    branchName,
+    "FETCH_HEAD",
+  ]);
+  ensureSuccess(createResult, "checkout");
 }
 
 export async function pushEmptyCommit(
