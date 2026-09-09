@@ -1,7 +1,8 @@
 .shell {
-  min-height: 100svh;
+  height: 100svh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .nav {
