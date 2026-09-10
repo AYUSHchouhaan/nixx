@@ -11,6 +11,11 @@ export const ProgrammerStateAnnotation = Annotation.Root({
     default: () => "",
   }),
 
+  messagedQuery: Annotation<string>({
+    reducer: (_, update) => update,
+    default: () => "",
+  }),
+
   messages: Annotation<BaseMessage[]>({
     reducer: (current, update) => [...current, ...update],
     default: () => [],

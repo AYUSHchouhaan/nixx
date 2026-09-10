@@ -66,17 +66,20 @@ export async function generateActionNode(
   const firstTaskMessage = buildFirstTaskMessage(state);
   const systemMessage = new SystemMessage(buildSystemPrompt(state.query));
 
-  const inputMessages =
-    messageHistory.length === 0
-      ? [systemMessage, firstTaskMessage]
-      : [systemMessage, ...messageHistory.slice(-HISTORY_WINDOW)];
+  const isNewQuery = state.messagedQuery !== state.query;
+
+  const inputMessages = isNewQuery
+    ? [systemMessage, ...messageHistory.slice(-HISTORY_WINDOW), firstTaskMessage]
+    : [systemMessage, ...messageHistory.slice(-HISTORY_WINDOW)];
 
   const responseMessage = (await llm.invoke(inputMessages, config)) as AIMessage;
 
-  const newMessages =
-    messageHistory.length === 0
-      ? [firstTaskMessage, responseMessage]
-      : [responseMessage];
+  const newMessages = isNewQuery
+    ? [firstTaskMessage, responseMessage]
+    : [responseMessage];
 
-  return { messages: newMessages };
+  return {
+    messages: newMessages,
+    messagedQuery: isNewQuery ? state.query : state.messagedQuery,
+  };
 }
