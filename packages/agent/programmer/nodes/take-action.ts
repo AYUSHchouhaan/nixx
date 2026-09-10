@@ -25,30 +25,33 @@ export async function takeActionNode(
     .reverse()
     .find((m) => m.getType() === "ai") as AIMessage | undefined;
 
-  if (!lastAI?.tool_calls?.length) {
+  const toolCalls = lastAI?.tool_calls ?? [];
+  if (!toolCalls.length) {
     return { messages: [] };
   }
 
-  const toolCall = lastAI.tool_calls[0];
-  if (!toolCall) return { messages: [] };
-  const { id, name, args } = toolCall;
-
-  const t = toolMap[name];
-  let result: string;
-  if (t) {
-    try {
-      result = String(await t.invoke(args, config));
-    } catch (err) {
-      result = `Error invoking ${name}: ${err instanceof Error ? err.message : String(err)}`;
+  const toolMessages: ToolMessage[] = [];
+  for (const toolCall of toolCalls) {
+    const { id, name, args } = toolCall;
+    const t = toolMap[name];
+    let result: string;
+    if (t) {
+      try {
+        result = String(await t.invoke(args, config));
+      } catch (err) {
+        result = `Error invoking ${name}: ${err instanceof Error ? err.message : String(err)}`;
+      }
+    } else {
+      result = `Unknown tool: ${name}`;
     }
-  } else {
-    result = `Unknown tool: ${name}`;
+
+    toolMessages.push(
+      new ToolMessage({
+        tool_call_id: id ?? name,
+        content: result,
+      }),
+    );
   }
 
-  const toolMsg = new ToolMessage({
-    tool_call_id: id ?? name,
-    content: result,
-  });
-
-  return { messages: [toolMsg] };
+  return { messages: toolMessages };
 }

@@ -18,14 +18,22 @@ function routeAfterGenerateAction(state: ProgrammerState): string {
     .find((m) => m.getType() === "ai") as AIMessage | undefined;
 
   if (lastAI?.tool_calls?.length) {
-    const toolName = lastAI.tool_calls[0]?.name;
-    if (toolName === "mark_task_complete") {
-      return "open-pull-request";
-    }
     return "take-action";
   }
 
   return "open-pull-request";
+}
+
+function routeAfterTakeAction(state: ProgrammerState): string {
+  const lastAI = [...state.messages]
+    .reverse()
+    .find((m) => m.getType() === "ai") as AIMessage | undefined;
+
+  if (lastAI?.tool_calls?.some((tc) => tc.name === "mark_task_complete")) {
+    return "open-pull-request";
+  }
+
+  return "generate-action";
 }
 
 export function createProgrammerGraph(deps: ProgrammerGraphDeps) {
@@ -55,7 +63,10 @@ export function createProgrammerGraph(deps: ProgrammerGraphDeps) {
       "open-pull-request": "open-pull-request",
       "reasoning-thinking": "reasoning-thinking",
     })
-    .addEdge("take-action", "generate-action")
+    .addConditionalEdges("take-action", routeAfterTakeAction, {
+      "generate-action": "generate-action",
+      "open-pull-request": "open-pull-request",
+    })
     .addEdge("reasoning-thinking", "generate-action")
     .addEdge("open-pull-request", "end-conclusion")
     .addEdge("end-conclusion", END);
