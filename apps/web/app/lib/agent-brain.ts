@@ -26,7 +26,6 @@ export interface AgentRunInput {
   threadId: string;
   sandboxId: string;
   query: string;
-  notes?: string;
   repoUrl: string;
   branch?: string;
   installationToken: string;
@@ -52,7 +51,7 @@ function buildConfig(input: AgentRunInput) {
 export async function runAgent(input: AgentRunInput) {
   await createAgentThread(input.threadId);
   const run = await client.runs.create(input.threadId, AGENT_ASSISTANT_ID, {
-    input: { query: input.query, notes: input.notes ?? "" },
+    input: { query: input.query },
     config: buildConfig(input),
   });
   const result = await client.runs.join(input.threadId, run.run_id);
@@ -65,10 +64,10 @@ export async function* streamAgent(
   await createAgentThread(input.threadId);
 
   yield* client.runs.stream(input.threadId, AGENT_ASSISTANT_ID, {
-    input: { query: input.query, notes: input.notes ?? "" },
+    input: { query: input.query },
     config: buildConfig(input),
     multitaskStrategy: input.multitaskStrategy,
-    streamMode: ["messages-tuple", "values"],
+    streamMode: ["values", "messages", "messages-tuple"],
   });
 }
 
