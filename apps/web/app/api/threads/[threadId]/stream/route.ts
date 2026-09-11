@@ -22,7 +22,6 @@ interface StreamBuild {
   threadId: string;
   sandboxId: string;
   query: string;
-  notes: string;
   repoUrl: string;
   branch: string;
   multitaskStrategy?: MultitaskStrategy;
@@ -68,7 +67,6 @@ async function buildStream(input: StreamBuild): Promise<StreamResult> {
         threadId: input.threadId,
         sandboxId: input.sandboxId,
         query: input.query,
-        notes: input.notes,
         repoUrl: input.repoUrl,
         branch: input.branch,
         installationToken,
@@ -105,7 +103,6 @@ export async function POST(
   }
 
   const query = body.input?.query ?? body.query ?? "";
-  const notes = body.input?.notes ?? body.notes ?? "";
 
   if (!query) {
     return new Response("query is required", { status: 400 });
@@ -142,7 +139,6 @@ export async function POST(
     threadId,
     sandboxId: thread.sandboxId ?? threadId,
     query,
-    notes,
     repoUrl,
     branch,
     multitaskStrategy:

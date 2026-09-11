@@ -23,7 +23,6 @@ export async function POST(
   const { threadId } = await params;
   const body = (await request.json()) as {
     query: string;
-    notes?: string;
     repoUrl?: string;
     branch?: string;
   };
@@ -62,7 +61,6 @@ export async function POST(
       threadId,
       sandboxId,
       query: body.query,
-      notes: body.notes,
       repoUrl: body.repoUrl,
       branch: body.branch,
       installationToken,
