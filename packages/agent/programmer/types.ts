@@ -6,17 +6,12 @@ import type { BaseCheckpointSaver } from "@langchain/langgraph-checkpoint";
 export const ProgrammerStateAnnotation = Annotation.Root({
   query: Annotation<string>,
 
-  notes: Annotation<string>({
-    reducer: (_, update) => update,
-    default: () => "",
-  }),
-
-  messagedQuery: Annotation<string>({
-    reducer: (_, update) => update,
-    default: () => "",
-  }),
-
   messages: Annotation<BaseMessage[]>({
+    reducer: (current, update) => [...current, ...update],
+    default: () => [],
+  }),
+
+  internalMessages: Annotation<BaseMessage[]>({
     reducer: (current, update) => [...current, ...update],
     default: () => [],
   }),
