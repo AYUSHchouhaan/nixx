@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nixx — Open SWE Message Rendering &amp; Streaming Port</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --panel-2: #1e222c;
+      --border: #2a2f3a;
+      --text: #e6e8ee;
+      --muted: #9aa3b2;
+      --accent: #4f8cff;
+      --accent-2: #7c5cff;
+      --code-bg: #12151b;
+      --green: #3fb68b;
+      --red: #e05252;
+      --amber: #e0a458;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .wrap {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 28px 20px;
+      border-right: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    aside h1 { font-size: 18px; margin: 0 0 6px; letter-spacing: -0.02em; }
+    aside .sub { color: var(--muted); font-size: 13px; margin: 0 0 24px; }
+
+    aside nav a {
+      display: block;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      margin-bottom: 2px;
+    }
+    aside nav a:hover { color: var(--text); background: var(--panel-2); }
+
+    main { padding: 40px 56px 80px; max-width: 980px; }
+
+    h2 {
+      font-size: 24px;
+      letter-spacing: -0.02em;
+      margin: 48px 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    h3 { font-size: 18px; margin: 28px 0 10px; }
+
+    p { color: #cdd2dc; margin: 10px 0; }
+
+    ul, ol { color: #cdd2dc; }
+    li { margin: 6px 0; }
+
+    code {
+      background: var(--code-bg);
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-family: ui-monospace, "Cascadia Code", "SF Mono", monospace;
+      font-size: 13px;
+      color: #d7e0ff;
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    pre code { background: none; padding: 0; color: #d7e0ff; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13.5px;
+    }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; background: var(--panel-2); }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(79, 140, 255, 0.14);
+      color: #9dbdff;
+    }
+    .badge.amber { background: rgba(224, 164, 88, 0.14); color: #ecc68a; }
+    .badge.green { background: rgba(63, 182, 139, 0.14); color: #7ed6b5; }
+    .badge.red   { background: rgba(224, 82, 82, 0.14);  color: #ef9a9a; }
+
+    .diagram {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      overflow-x: auto;
+      font-family: ui-monospace, "Cascadia Code", monospace;
+      font-size: 12.5px;
+      color: #aeb6c4;
+      white-space: pre;
+      line-height: 1.45;
+    }
+
+    .note {
+      border-left: 3px solid var(--amber);
+      background: rgba(224, 164, 88, 0.08);
+      padding: 10px 14px;
+      border-radius: 0 10px 10px 0;
+      margin: 16px 0;
+      color: #e6c99c;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 16px 0;
+    }
+
+    .file {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 16px 0;
+      background: var(--panel);
+    }
+    .file .file-head {
+      padding: 10px 16px;
+      background: var(--panel-2);
+      font-family: ui-monospace, "Cascadia Code", monospace;
+      font-size: 13px;
+      color: #9dbdff;
+      border-bottom: 1px solid var(--border);
+    }
+    .file pre { border: none; border-radius: 0; margin: 0; }
+
+    .accent { color: var(--accent); }
+    .green { color: var(--green); }
+    .red { color: var(--red); }
+    .muted { color: var(--muted); }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-family: ui-monospace, "Cascadia Code", monospace;
+      font-size: 12px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      color: #cdd2dc;
+    }
+
+    @media (max-width: 800px) {
+      .wrap { grid-template-columns: 1fr; }
+      aside {
+        position: static;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+      main { padding: 24px 20px 60px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <aside>
+      <h1>Nixx</h1>
+      <p class="sub">Open SWE Message Rendering Port</p>
+      <nav>
+        <a href="#overview">Overview</a>
+        <a href="#problem">What Was Wrong</a>
+        <a href="#pattern">The Pattern We Inherited</a>
+        <a href="#backend">Backend Changes</a>
+        <a href="#frontend">Frontend Changes</a>
+        <a href="#pipeline">Rendering Pipeline</a>
+        <a href="#tools">Tool Mapping</a>
+        <a href="#verification">Verification</a>
+        <a href="#takeaways">Key Takeaways</a>
+      </nav>
+    </aside>
+
+    <main>
+      <h2 id="overview">Overview</h2>
+      <p>
+        This change ports the <strong>message rendering / streaming logic</strong> from the Open SWE agent into
+        Nixx, without copying Open SWE's exact Tailwind / framer-motion components. The goal is to correctly render
+        <strong>user messages, AI reasoning, tool calls, and tool results</strong> for Nixx's sandbox tools
+        (<code>grep</code>, <code>glob</code>, <code>read</code>, <code>run</code>, <code>create_file</code>,
+        <code>edit</code>, <code>mark_task_complete</code>).
+      </p>
+      <p>
+        The frontend keeps Nixx's existing CSS-module aesthetic. The agent behavior is unchanged — only how the
+        streamed state is interpreted and displayed changes, plus a small state-model split.
+      </p>
+
+      <div class="diagram">        ┌─────────────────────────────────────────────┐
+        │              apps/web (Next.js)             │
+        │                                             │
+        │  chat-client.tsx ──▶ useStream (SDK)        │
+        │       │                                     │
+        │       ▼                                     │
+        │  message-view.tsx  (new dispatcher)         │
+        │   ├─ HumanMessageView                       │
+        │   ├─ ActionStep (reasoning + actions)       │
+        │   └─ ActionItem (tool call + result)        │
+        └───────────────────▲─────────────────────────┘
+                            │ SSE  values / messages / messages-tuple
+        ┌───────────────────┴─────────────────────────┐
+        │            apps/web/lib/agent-brain.ts       │
+        │            (LangGraph SDK client)            │
+        └───────────────────▲─────────────────────────┘
+                            │ HTTP LangGraph stream
+        ┌───────────────────┴─────────────────────────┐
+        │        @repo/agent programmer graph          │
+        │        messages        (display, persisted)  │
+        │        internalMessages (LLM context)        │
+        └──────────────────────────────────────────────┘</div>
+
+      <h2 id="problem">What Was Wrong</h2>
+      <p>Before this change, <code>chat-client.tsx</code> had a single <code>MessageRow</code> that did almost no
+      interpretation:</p>
+      <ul>
+        <li><span class="badge">human</span> → a right-aligned text bubble (this part was fine).</li>
+        <li><span class="badge">ai</span> → rendered only <code>contentToText(content)</code>, so the model's
+          <strong>tool calls were invisible</strong>. The reasoning text and the tool call were not separated.</li>
+        <li><span class="badge">tool</span> → rendered the raw result as a <code>&lt;pre&gt;</code> blob with no tool
+          name and no link back to the tool call that produced it.</li>
+      </ul>
+      <div class="note">
+        The state carried a single <code>messages</code> list used for both display and LLM context. This made it
+        impossible to keep the displayed transcript intact while independently trimming/filtering what the model sees.
+      </div>
+
+      <h2 id="pattern">The Pattern We Inherited</h2>
+      <p>Open SWE separates concerns in two ways that Nixx now mirrors:</p>
+      <div class="card">
+        <h3>1. Two message lists in state</h3>
+        <ul>
+          <li><code>messages</code> — the transcript shown to the client; <strong>never truncated</strong>.</li>
+          <li><code>internalMessages</code> — the list actually passed to the LLM; <strong>may be trimmed or
+            filtered</strong>.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>2. Client-side extraction in the dispatcher</h3>
+        <ol>
+          <li>Guard the message type (<code>human</code> / <code>ai</code> / <code>tool</code>).</li>
+          <li>Extract <code>tool_calls</code> from the AI message.</li>
+          <li>Join <code>ToolMessage</code> results to tool calls on <code>tool_call_id</code>.</li>
+          <li>Treat the AI message's text content as <strong>reasoning</strong>.</li>
+          <li>Dispatch actionable tools to a rich <code>ActionStep</code>, and unmatched tool messages to a
+            standalone result.</li>
+        </ol>
+      </div>
+
+      <h2 id="backend">Backend Changes</h2>
+      <p>These changes keep the graph behavior identical while introducing the display/context split and richer
+      tool-message metadata.</p>
+
+      <div class="file">
+        <div class="file-head">packages/agent/programmer/types.ts</div>
+        <pre><code>export const ProgrammerStateAnnotation = Annotation.Root({
+  query: Annotation&lt;string&gt;,
+
+  messages: Annotation&lt;BaseMessage[]&gt;({
+    reducer: (current, update) =&gt; [...current, ...update],
+    default: () =&gt; [],
+  }),
+
+  // NEW: LLM-facing copy. `messages` stays the client-visible transcript.
+  internalMessages: Annotation&lt;BaseMessage[]&gt;({
+    reducer: (current, update) =&gt; [...current, ...update],
+    default: () =&gt; [],
+  }),
+
+  summary: Annotation&lt;string&gt;({ ... }),
+  pullRequest: Annotation&lt;...&gt;({ ... }),
+});</code></pre>
+      </div>
+
+      <div class="file">
+        <div class="file-head">packages/agent/programmer/nodes/generate-action.ts</div>
+        <pre><code>const messageHistory = state.internalMessages; // was state.messages
+const firstTaskMessage = buildFirstTaskMessage(state);
+const systemMessage = new SystemMessage(buildSystemPrompt(state.query));
+
+const inputMessages =
+  messageHistory.length === 0
+    ? [systemMessage, firstTaskMessage]
+    : [systemMessage, ...messageHistory.slice(-HISTORY_WINDOW)];
+
+const responseMessage = await llm.invoke(inputMessages, config);
+
+const newMessages =
+  messageHistory.length === 0
+    ? [firstTaskMessage, responseMessage]
+    : [responseMessage];
+
+return { messages: newMessages, internalMessages: newMessages };</code></pre>
+      </div>
+
+      <div class="file">
+        <div class="file-head">packages/agent/programmer/nodes/take-action.ts</div>
+        <pre><code>const lastAI = [...state.internalMessages] // was state.messages
+  .reverse()
+  .find((m) =&gt; m.getType() === "ai") as AIMessage | undefined;
+
+// ...invoke each tool...
+
+const isError =
+  result.startsWith("Error:") ||
+  result.startsWith("Error invoking") ||
+  result.startsWith("Unknown tool:");
+
+toolMessages.push(
+  new ToolMessage({
+    tool_call_id: id ?? name,
+    content: result,
+    name,                              // NEW: tool name for the frontend
+    status: isError ? "error" : "success", // NEW: success/error status
+  }),
+);
+
+return { messages: toolMessages, internalMessages: toolMessages };</code></pre>
+      </div>
+
+      <div class="file">
+        <div class="file-head">apps/web/app/lib/agent-brain.ts</div>
+        <pre><code>streamMode: ["values", "messages", "messages-tuple"],
+// was ["messages-tuple", "values"] — added "messages" for token-level streaming</code></pre>
+      </div>
+
+      <h2 id="frontend">Frontend Changes</h2>
+
+      <div class="file">
+        <div class="file-head">apps/web/app/lib/agent-types.ts</div>
+        <pre><code>export const chatMessageSchema = z.object({
+  id: z.string().optional(),
+  type: messageTypeSchema,
+  content: messageContentSchema,
+  tool_calls: z.array(toolCallSchema).optional(),
+  tool_call_id: z.string().optional(),
+  name: z.string().optional(),                 // NEW
+  status: z.enum(["success", "error"]).optional(), // NEW
+});
+
+// NEW shared message shapes used by the renderer
+export interface ToolCallLike {
+  id?: string;
+  name: string;
+  args: unknown;
+  type?: string;
+}
+
+export interface MessageLike {
+  id?: string;
+  type: string;
+  content: unknown;
+  tool_calls?: ToolCallLike[];
+  tool_call_id?: string;
+  name?: string;
+  status?: "success" | "error";
+  additional_kwargs?: Record&lt;string, unknown&gt;;
+}
+
+export interface ChatState {
+  messages: MessageLike[];
+  summary?: string;   // NEW: final end-conclusion summary
+}</code></pre>
+      </div>
+
+      <div class="file">
+        <div class="file-head">apps/web/app/app/[id]/message-view.tsx (new)</div>
+        <pre><code>"use client";
+
+// Core rendering module. It is the Nixx-styled port of Open SWE's:
+//   thread/messages/ai.tsx  +  gen-ui/action-step.tsx  +  thread/messages/tool-calls.tsx
+
+export function MessageView({ message, messages }) {
+  if (message.type === "human") {
+    return &lt;HumanMessageView message={message} /&gt;;
+  }
+
+  if (message.type === "tool") {
+    // Suppress tool messages already rendered inside their AI action step.
+    const consumed = messages.some(
+      (m) =&gt; m.type === "ai" &amp;&amp;
+        (m.tool_calls ?? []).some((tc) =&gt; tc.id === message.tool_call_id),
+    );
+    if (consumed) return null;
+    return &lt;ActionItem action={mapToolMessageToAction(message, messages)} /&gt;;
+  }
+
+  // AI message
+  const reasoningText = contentToText(message.content);
+  const toolCalls = message.tool_calls ?? [];
+
+  if (toolCalls.length &gt; 0) {
+    const actions = toolCalls.map((toolCall) =&gt; {
+      const toolMessage = messages.find(
+        (m) =&gt; m.type === "tool" &amp;&amp; m.tool_call_id === toolCall.id,
+      );
+      return toolMessage
+        ? mapToolMessageToAction(toolMessage, messages)
+        : mapToolCallToAction(toolCall);
+    });
+    return &lt;ActionStep actions={actions} reasoningText={reasoningText} /&gt;;
+  }
+
+  return (
+    &lt;div className={styles.aiRow}&gt;
+      &lt;div className={styles.aiBubble}&gt;
+        {reasoningText ? &lt;p className={styles.text}&gt;{reasoningText}&lt;/p&gt; : null}
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+      </div>
+
+      <div class="file">
+        <div class="file-head">apps/web/app/app/[id]/chat-client.tsx</div>
+        <pre><code>// Dropped the lossy chatMessageArraySchema re-parse.
+// Messages now come straight from stream.messages and render through MessageView.
+
+const stream = useStream&lt;ChatState&gt;({
+  messagesKey: "messages",
+  transport,
+  threadId,
+  initialValues: { messages: initialMessages },
+});
+
+useEffect(() =&gt; {
+  if (stream.messages.length &gt; 0) {
+    setMessages(stream.messages as MessageLike[]);
+  }
+}, [stream.messages]);
+
+const summary =
+  typeof stream.values?.summary === "string" &amp;&amp; stream.values.summary
+    ? stream.values.summary
+    : null;
+
+// render:
+//   messages.map(m =&gt; &lt;MessageView message={m} messages={messages} /&gt;)
+//   then the final summary as an AI bubble when present</code></pre>
+      </div>
+
+      <div class="file">
+        <div class="file-head">apps/web/app/app/[id]/page.tsx</div>
+        <pre><code>import { threadMetadataSchema, type MessageLike } from "../../lib/agent-types";
+
+const initialMessages: MessageLike[] = await getThreadMessages(id);
+
+// passed into &lt;ChatClient initialMessages={initialMessages} ... /&gt;</code></pre>
+      </div>
+
+      <div class="file">
+        <div class="file-head">apps/web/app/app/[id]/chat.module.css</div>
+        <pre><code>/* Added styles for the new renderer (all reuse existing CSS variables): */
+.actionStep   .reasoning       .reasoningToggle  .reasoningBody
+.chevron      .chevronOpen     .actions          .actionItem
+.actionHeader .actionMeta      .toolArgs         .chevronBtn
+.toolDetails  .toolOutput      .editList         .editItem
+.editMarker   .editCode
+
+/* plus a generating state for the existing .status badge */
+.status[data-state="generating"] { color: var(--ink-3); background: var(--border); }</code></pre>
+      </div>
+
+      <h2 id="pipeline">Rendering Pipeline</h2>
+      <p>Each message flows through <code>MessageView</code> exactly like Open SWE's <code>AssistantMessage</code>:</p>
+
+      <table>
+        <thead>
+          <tr><th>Message type</th><th>Rendered as</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>human</code></td>
+            <td><span class="pill">HumanMessageView</span></td>
+            <td>Right-aligned bubble (unchanged behavior).</td>
+          </tr>
+          <tr>
+            <td><code>ai</code> + tool calls</td>
+            <td><span class="pill">ActionStep</span></td>
+            <td>Collapsible reasoning block + one <code>ActionItem</code> per tool call.</td>
+          </tr>
+          <tr>
+            <td><code>ai</code> (no tool calls)</td>
+            <td>plain AI bubble</td>
+            <td>Final assistant text.</td>
+          </tr>
+          <tr>
+            <td><code>tool</code> (consumed)</td>
+            <td><code>null</code></td>
+            <td>Already shown inside its owning AI action step.</td>
+          </tr>
+          <tr>
+            <td><code>tool</code> (orphan)</td>
+            <td><span class="pill">ActionItem</span></td>
+            <td>Standalone result fallback.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="diagram"> stream.messages (ordered)
+   │
+   ▼
+ MessageView
+   │
+   ├─ human ───────────────────────────▶ right-aligned bubble
+   │
+   ├─ tool ──▶ owned by an AI tool_call? ── yes ──▶ null (rendered inline)
+   │                     │
+   │                     └── no ──▶ standalone ActionItem
+   │
+   └─ ai ──▶ tool_calls? ── no ──▶ final text bubble
+                     │
+                     └── yes ──▶ ActionStep
+                                    ├─ reasoning (collapsible)
+                                    └─ ActionItem per tool call
+                                         ├─ status: generating → done (success/error)
+                                         └─ output (collapsible &lt;pre&gt;)</div>
+
+      <h2 id="tools">Tool Mapping</h2>
+      <p>The renderer maps each Nixx tool call to an <code>ActionItem</code> with a compact header plus a collapsible
+      output. <code>edit</code> additionally renders old → new replacements.</p>
+
+      <table>
+        <thead>
+          <tr><th>Tool name</th><th>Action type</th><th>Header summary</th><th>Expanded content</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>grep</code></td><td><code>grep</code></td><td>query</td><td>output</td></tr>
+          <tr><td><code>glob</code></td><td><code>glob</code></td><td>patterns</td><td>output</td></tr>
+          <tr><td><code>read</code></td><td><code>read</code></td><td>filePaths</td><td>output</td></tr>
+          <tr><td><code>run</code></td><td><code>shell</code></td><td>command</td><td>output</td></tr>
+          <tr><td><code>create_file</code></td><td><code>create_file</code></td><td>filePath</td><td>output</td></tr>
+          <tr><td><code>edit</code></td><td><code>edit</code></td><td>filePath</td><td>old/new edits + output</td></tr>
+          <tr><td><code>mark_task_complete</code></td><td><code>task_complete</code></td><td>summary</td><td>output</td></tr>
+          <tr><td>anything else</td><td><code>tool</code></td><td>toolName + args</td><td>output</td></tr>
+        </tbody>
+      </table>
+
+      <p>Status is derived from the joined <code>ToolMessage</code>:</p>
+      <ul>
+        <li><span class="badge amber">generating</span> — tool call streamed, result not yet received.</li>
+        <li><span class="badge green">done / success</span> — result received with <code>status !== "error"</code>.</li>
+        <li><span class="badge red">done / failed</span> — result received with <code>status === "error"</code>.</li>
+      </ul>
+
+      <h2 id="verification">Verification</h2>
+      <table>
+        <thead>
+          <tr><th>Command</th><th>Result</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>bun run check-types</code> (packages/agent)</td>
+            <td><span class="badge green">pass</span></td>
+          </tr>
+          <tr>
+            <td><code>bun run check-types</code> (apps/web)</td>
+            <td><span class="badge green">pass</span></td>
+          </tr>
+          <tr>
+            <td><code>bun run lint</code> (apps/web)</td>
+            <td><span class="badge green">pass</span></td>
+          </tr>
+          <tr>
+            <td><code>bun run build</code> (apps/web)</td>
+            <td><span class="badge green">pass</span> — all routes compiled including <code>/app/[id]</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 id="takeaways">Key Takeaways</h2>
+      <ul>
+        <li>The renderer inherits Open SWE's <strong>logic</strong> (type guards → extract tool calls → join on
+          <code>tool_call_id</code> → dispatch), not its component styling.</li>
+        <li>Nixx's state now carries <code>messages</code> (display) and <code>internalMessages</code> (LLM context),
+          keeping the transcript intact while leaving room to trim context later.</li>
+        <li>Tool messages now carry <code>name</code> and <code>status</code>, so the frontend can render tool identity
+          and success/error without string-sniffing.</li>
+        <li>Adding <code>"messages"</code> to the stream mode enables token-level AI streaming, matching Open SWE's
+          live-update feel.</li>
+        <li>No new frontend dependencies were added — everything uses Nixx's existing CSS modules and CSS variables.</li>
+      </ul>
+    </main>
+  </div>
+</body>
+</html>
