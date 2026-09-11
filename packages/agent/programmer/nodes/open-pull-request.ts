@@ -1,7 +1,13 @@
 import type { RunnableConfig } from "@langchain/core/runnables";
 import type { ProgrammerState, ProgrammerGraphDeps } from "../types";
 import { getConfigurableString } from "../lib/config";
-import { checkoutBranch, stageAllFiles, commitChanges, pushBranch } from "../lib/sandbox-git";
+import {
+  checkoutBranch,
+  stageAllFiles,
+  hasStagedChanges,
+  commitChanges,
+  pushBranch,
+} from "../lib/sandbox-git";
 
 export async function openPullRequestNode(
   state: ProgrammerState,
@@ -17,8 +23,15 @@ export async function openPullRequestNode(
 
   await checkoutBranch(deps.sandboxClient, config, branchName);
   await stageAllFiles(deps.sandboxClient, config);
-  await commitChanges(deps.sandboxClient, config, `feat: nixx changes for ${threadId}`);
-  await pushBranch(deps.sandboxClient, config, branchName);
+
+  if (await hasStagedChanges(deps.sandboxClient, config)) {
+    await commitChanges(
+      deps.sandboxClient,
+      config,
+      `feat: nixx changes for ${threadId}`,
+    );
+    await pushBranch(deps.sandboxClient, config, branchName);
+  }
 
   return {
     pullRequest: {

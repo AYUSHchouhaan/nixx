@@ -93,16 +93,33 @@ export async function stageAllFiles(
   ensureSuccess(result, "add");
 }
 
+export async function hasStagedChanges(
+  sandboxClient: SandboxClient,
+  config: RunnableConfig,
+): Promise<boolean> {
+  const result = await runGit(sandboxClient, config, [
+    "diff",
+    "--cached",
+    "--quiet",
+  ]);
+  if (result.error) {
+    throw new Error(`Git diff failed: ${result.error}`);
+  }
+  if (result.exitCode === 1) {
+    return true;
+  }
+  if (result.exitCode !== 0) {
+    throw new Error(`Git diff failed: ${result.output}`);
+  }
+  return false;
+}
+
 export async function commitChanges(
   sandboxClient: SandboxClient,
   config: RunnableConfig,
   message: string,
 ) {
-  const result = await runGit(sandboxClient, config, [
-    "commit",
-    "-m",
-    message,
-  ]);
+  const result = await runGit(sandboxClient, config, ["commit", "-m", message]);
   ensureSuccess(result, "commit");
 }
 
