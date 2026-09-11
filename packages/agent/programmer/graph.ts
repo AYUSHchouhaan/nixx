@@ -1,5 +1,5 @@
 import { END, START, StateGraph } from "@langchain/langgraph";
-import { AIMessage } from "@langchain/core/messages";
+import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { ProgrammerStateAnnotation } from "./types";
 import type { ProgrammerState, ProgrammerGraphDeps } from "./types";
 import {
@@ -11,6 +11,12 @@ import {
   createEmptyPrNode,
   openPullRequestNode,
 } from "./nodes";
+
+function appendUserMessageNode(
+  state: ProgrammerState,
+): Partial<ProgrammerState> {
+  return { messages: [new HumanMessage(state.query)] };
+}
 
 function routeAfterGenerateAction(state: ProgrammerState): string {
   const lastAI = [...state.messages]
@@ -38,6 +44,7 @@ function routeAfterTakeAction(state: ProgrammerState): string {
 
 export function createProgrammerGraph(deps: ProgrammerGraphDeps) {
   const workflow = new StateGraph(ProgrammerStateAnnotation)
+    .addNode("append-user-message", appendUserMessageNode)
     .addNode("prepare-sandbox", (state, config) =>
       prepareSandboxNode(state, deps, config),
     )
@@ -55,7 +62,8 @@ export function createProgrammerGraph(deps: ProgrammerGraphDeps) {
       openPullRequestNode(state, deps, config),
     )
     .addNode("end-conclusion", endConclusionNode)
-    .addEdge(START, "prepare-sandbox")
+    .addEdge(START, "append-user-message")
+    .addEdge("append-user-message", "prepare-sandbox")
     .addEdge("prepare-sandbox", "create-empty-pr")
     .addEdge("create-empty-pr", "generate-action")
     .addConditionalEdges("generate-action", routeAfterGenerateAction, {
