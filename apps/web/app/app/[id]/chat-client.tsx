@@ -6,19 +6,11 @@ import { useRouter } from "next/navigation";
 import { useStream, FetchStreamTransport } from "@langchain/langgraph-sdk/react";
 import {
   type AgentInput,
-  type ChatMessage,
   type ChatState,
-  chatMessageArraySchema,
+  type MessageLike,
 } from "../../lib/agent-types";
+import { MessageView } from "./message-view";
 import styles from "./chat.module.css";
-
-function contentToText(content: ChatMessage["content"]): string {
-  if (typeof content === "string") return content;
-  return content
-    .map((part) => part.text ?? "")
-    .filter(Boolean)
-    .join("\n");
-}
 
 export function ChatClient({
   threadId,
@@ -30,13 +22,13 @@ export function ChatClient({
   threadId: string;
   repoUrl: string;
   branch: string;
-  initialMessages: ChatMessage[];
+  initialMessages: MessageLike[];
   initialPrompt: string;
 }) {
   const router = useRouter();
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [messages, setMessages] = useState<MessageLike[]>(initialMessages);
   const initialPromptConsumed = useRef(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -63,7 +55,6 @@ export function ChatClient({
     try {
       const input: AgentInput = {
         query: text,
-        notes: "",
         repoUrl,
         branch,
         multitask_strategy: "interrupt",
@@ -76,7 +67,11 @@ export function ChatClient({
   }, [draft, stream, repoUrl, branch]);
 
   useEffect(() => {
-    if (initialPromptConsumed.current || initialMessages.length > 0 || !initialPrompt) {
+    if (
+      initialPromptConsumed.current ||
+      initialMessages.length > 0 ||
+      !initialPrompt
+    ) {
       return;
     }
 
@@ -92,7 +87,6 @@ export function ChatClient({
 
     const input: AgentInput = {
       query: initialPrompt,
-      notes: "",
       repoUrl,
       branch,
       multitask_strategy: "interrupt",
@@ -101,16 +95,26 @@ export function ChatClient({
     void stream.submit(input).catch((err: unknown) => {
       setError(err instanceof Error ? err.message : "Failed to run agent");
     });
-  }, [branch, initialMessages.length, initialPrompt, repoUrl, router, stream, threadId]);
+  }, [
+    branch,
+    initialMessages.length,
+    initialPrompt,
+    repoUrl,
+    router,
+    stream,
+    threadId,
+  ]);
 
   useEffect(() => {
     if (stream.messages.length > 0) {
-      const parsed = chatMessageArraySchema.safeParse(stream.messages);
-      if (parsed.success) {
-        setMessages(parsed.data);
-      }
+      setMessages(stream.messages as MessageLike[]);
     }
   }, [stream.messages]);
+
+  const summary =
+    typeof stream.values?.summary === "string" && stream.values.summary
+      ? stream.values.summary
+      : null;
 
   return (
     <div className={styles.shell}>
@@ -138,15 +142,26 @@ export function ChatClient({
 
       <main className={styles.main}>
         <div className={styles.scroll} ref={scrollRef}>
-          {messages.length === 0 && !stream.isLoading ? (
+          {messages.length === 0 && !stream.isLoading && !summary ? (
             <p className={styles.empty}>
               Describe your task below to start the agent.
             </p>
           ) : (
             <div className={styles.messages}>
               {messages.map((message, index) => (
-                <MessageRow key={message.id ?? index} message={message} />
+                <MessageView
+                  key={message.id ?? index}
+                  message={message}
+                  messages={messages}
+                />
               ))}
+              {summary && !stream.isLoading ? (
+                <div className={styles.aiRow}>
+                  <div className={styles.aiBubble}>
+                    <p className={styles.text}>{summary}</p>
+                  </div>
+                </div>
+              ) : null}
               {stream.isLoading ? (
                 <div className={styles.thinking}>
                   <span className={styles.thinkingDot} aria-hidden="true" />
@@ -190,38 +205,6 @@ export function ChatClient({
           </div>
         </div>
       </main>
-    </div>
-  );
-}
-
-function MessageRow({ message }: { message: ChatMessage }) {
-  const text = contentToText(message.content);
-
-  if (message.type === "human") {
-    return (
-      <div className={styles.humanRow}>
-        <div className={styles.humanBubble}>
-          <p className={styles.text}>{text}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (message.type === "tool") {
-    return (
-      <div className={styles.toolRow}>
-        <div className={styles.toolBubble}>
-          <pre className={styles.code}>{text}</pre>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles.aiRow}>
-      <div className={styles.aiBubble}>
-        <p className={styles.text}>{text}</p>
-      </div>
     </div>
   );
 }

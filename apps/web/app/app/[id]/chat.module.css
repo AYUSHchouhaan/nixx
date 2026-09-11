@@ -333,3 +333,165 @@
     animation: none;
   }
 }
+
+.actionStep {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 720px;
+}
+
+.reasoning {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--ink-3);
+  border-radius: 9px;
+  background: var(--bg-subtle);
+  padding: 10px 12px;
+}
+
+.reasoningToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.reasoningToggle:hover {
+  color: var(--ink);
+}
+
+.reasoningBody {
+  margin-top: 8px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chevron {
+  display: inline-block;
+  transition: transform 140ms ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.actionItem {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.actionHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.actionMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.toolArgs {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actionHeader .status {
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+.status[data-state="generating"] {
+  color: var(--ink-3);
+  background: var(--border);
+}
+
+.chevronBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-3);
+  font-size: 11px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.chevronBtn:hover {
+  color: var(--ink);
+  border-color: var(--border-strong);
+}
+
+.toolDetails {
+  border-top: 1px solid var(--border);
+  background: var(--bg-subtle);
+  padding: 10px 12px;
+}
+
+.toolOutput {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+
+.editList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.editItem {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 8px 10px;
+  align-items: start;
+}
+
+.editMarker {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+
+.editCode {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
