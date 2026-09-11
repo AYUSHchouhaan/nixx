@@ -6,7 +6,7 @@ import { db } from "@repo/db";
 import { threads } from "@repo/db/schema";
 import { eq } from "drizzle-orm";
 import { getThreadMessages } from "../../lib/agent-brain";
-import { type ChatMessage, threadMetadataSchema } from "../../lib/agent-types";
+import { threadMetadataSchema, type MessageLike } from "../../lib/agent-types";
 import { ChatClient } from "./chat-client";
 
 export const metadata: Metadata = {
@@ -42,7 +42,7 @@ export default async function ThreadPage({
   }
 
   const metadata = threadMetadataSchema.parse(thread.metadata ?? {});
-  const initialMessages: ChatMessage[] = await getThreadMessages(id);
+  const initialMessages: MessageLike[] = await getThreadMessages(id);
 
   return (
     <ChatClient

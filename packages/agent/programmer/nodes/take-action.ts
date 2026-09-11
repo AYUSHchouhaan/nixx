@@ -21,7 +21,7 @@ export async function takeActionNode(
     mark_task_complete: tools.markTaskComplete,
   };
 
-  const lastAI = [...state.messages]
+  const lastAI = [...state.internalMessages]
     .reverse()
     .find((m) => m.getType() === "ai") as AIMessage | undefined;
 
@@ -45,13 +45,20 @@ export async function takeActionNode(
       result = `Unknown tool: ${name}`;
     }
 
+    const isError =
+      result.startsWith("Error:") ||
+      result.startsWith("Error invoking") ||
+      result.startsWith("Unknown tool:");
+
     toolMessages.push(
       new ToolMessage({
         tool_call_id: id ?? name,
         content: result,
+        name,
+        status: isError ? "error" : "success",
       }),
     );
   }
 
-  return { messages: toolMessages };
+  return { messages: toolMessages, internalMessages: toolMessages };
 }
