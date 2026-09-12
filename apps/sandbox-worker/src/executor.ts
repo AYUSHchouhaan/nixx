@@ -52,28 +52,80 @@ async function readFiles(
   return results.join("\n\n");
 }
 
+function shellQuote(arg: string): string {
+  return `'${arg.replace(/'/g, `'\\''`)}'`;
+}
+
+const SEARCH_EXCLUDES = [
+  "!node_modules",
+  "!node_modules/**",
+  "!.git",
+  "!.git/**",
+  "!.next",
+  "!.next/**",
+  "!dist",
+  "!dist/**",
+  "!build",
+  "!build/**",
+  "!.turbo",
+  "!.turbo/**",
+  "!.vercel",
+  "!.vercel/**",
+  "!.cache",
+  "!.cache/**",
+];
+
+async function executeSearch(
+  sandbox: Sandbox,
+  repoDir: string,
+  args: string[],
+): Promise<{ output: string; exitCode: number }> {
+  const response = await sandbox.process.executeCommand(
+    ["rg", ...args.map(shellQuote)].join(" "),
+    repoDir,
+  );
+
+  return {
+    output: response.result ?? "",
+    exitCode: response.exitCode ?? 0,
+  };
+}
+
 async function globFiles(
   sandbox: Sandbox,
   repoDir: string,
   patterns: string[],
 ): Promise<string> {
-  const files = new Set<string>();
-
-  for (const pattern of patterns) {
-    try {
-      const result = await sandbox.fs.searchFiles(repoDir, String(pattern));
-      for (const file of result.files) {
-        files.add(stripRepoPrefix(repoDir, file));
-      }
-    } catch {
-      // Ignore per-pattern failures and report on the union of what was found.
-    }
+  const args = ["--files"];
+  for (const exclude of SEARCH_EXCLUDES) {
+    args.push("--glob", exclude);
   }
+  for (const pattern of patterns) {
+    args.push("--glob", pattern);
+  }
+  args.push(".");
 
-  const matched = [...files];
-  return matched.length
-    ? `files matching:\n${matched.join("\n")}`
-    : `No files found matching: ${patterns.join(", ")}`;
+  try {
+    const response = await executeSearch(sandbox, repoDir, args);
+    if (response.exitCode === 1 || !response.output.trim()) {
+      return `No files found matching: ${patterns.join(", ")}`;
+    }
+    if (response.exitCode !== 0) {
+      return `Error running glob search: ${response.output.trim()}`;
+    }
+
+    const files = response.output
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .map((file) => toPosix(file).replace(/^\.\//, ""));
+
+    return `files matching:\n${files.join("\n")}`;
+  } catch (error) {
+    return `Error running glob search: ${
+      error instanceof Error ? error.message : String(error)
+    }`;
+  }
 }
 
 async function grepFiles(
@@ -81,14 +133,34 @@ async function grepFiles(
   repoDir: string,
   query: string,
 ): Promise<string> {
-  const matches = await sandbox.fs.findFiles(repoDir, String(query));
-  const files = [...new Set(matches.map((m) => stripRepoPrefix(repoDir, m.file)))].slice(
-    0,
-    5,
-  );
-  return files.length
-    ? `Found ${files.length} file(s) matching "${query}":\n${files.join("\n")}`
-    : `No files found matching "${query}".`;
+  const args = ["--ignore-case", "--files-with-matches"];
+  for (const exclude of SEARCH_EXCLUDES) {
+    args.push("--glob", exclude);
+  }
+  args.push("-e", query, ".");
+
+  try {
+    const response = await executeSearch(sandbox, repoDir, args);
+    if (response.exitCode === 1 || !response.output.trim()) {
+      return `No files found matching "${query}".`;
+    }
+    if (response.exitCode !== 0) {
+      return `Error running grep search: ${response.output.trim()}`;
+    }
+
+    const files = response.output
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .slice(0, 5)
+      .map((file) => toPosix(file).replace(/^\.\//, ""));
+
+    return `Found ${files.length} file(s) matching "${query}":\n${files.join("\n")}`;
+  } catch (error) {
+    return `Error running grep search: ${
+      error instanceof Error ? error.message : String(error)
+    }`;
+  }
 }
 
 async function createFile(
@@ -191,10 +263,6 @@ async function runCommand(
       error: error instanceof Error ? error.message : String(error),
     };
   }
-}
-
-function shellQuote(arg: string): string {
-  return `'${arg.replace(/'/g, `'\\''`)}'`;
 }
 
 async function runGit(
