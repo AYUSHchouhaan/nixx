@@ -1,4 +1,4 @@
-import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { SystemMessage } from "@langchain/core/messages";
 import { createSandboxTools } from "../tools";
 import type { ProgrammerState } from "../types";
 import { createChatModel } from "../model";
@@ -40,12 +40,6 @@ When the task is complete:
 `;
 }
 
-function buildFirstTaskMessage(state: ProgrammerState): HumanMessage {
-  return new HumanMessage(
-    `Query: "${state.query}"\n\nStart implementing this now. Go directly to the work - do not over-investigate.`,
-  );
-}
-
 export async function generateActionNode(
   state: ProgrammerState,
   deps: import("../types").ProgrammerGraphDeps,
@@ -63,20 +57,13 @@ export async function generateActionNode(
   ]);
 
   const messageHistory = state.internalMessages;
-  const firstTaskMessage = buildFirstTaskMessage(state);
   const systemMessage = new SystemMessage(buildSystemPrompt(state.query));
-
-  const inputMessages =
-    messageHistory.length === 0
-      ? [systemMessage, firstTaskMessage]
-      : [systemMessage, ...messageHistory.slice(-HISTORY_WINDOW)];
+  const inputMessages = [
+    systemMessage,
+    ...messageHistory.slice(-HISTORY_WINDOW),
+  ];
 
   const responseMessage = await llm.invoke(inputMessages, config);
 
-  const newMessages =
-    messageHistory.length === 0
-      ? [firstTaskMessage, responseMessage]
-      : [responseMessage];
-
-  return { messages: [responseMessage], internalMessages: newMessages };
+  return { messages: [responseMessage], internalMessages: [responseMessage] };
 }

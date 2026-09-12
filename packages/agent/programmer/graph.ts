@@ -15,7 +15,15 @@ import {
 function appendUserMessageNode(
   state: ProgrammerState,
 ): Partial<ProgrammerState> {
-  return { messages: [new HumanMessage(state.query)] };
+  const userMessage = new HumanMessage(state.query);
+  const internalUserMessage = new HumanMessage(
+    `Query: "${state.query}"\n\nStart implementing this now. Go directly to the work - do not over-investigate.`,
+  );
+
+  return {
+    messages: [userMessage],
+    internalMessages: [internalUserMessage],
+  };
 }
 
 function routeAfterGenerateAction(state: ProgrammerState): string {
