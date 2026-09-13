@@ -206,11 +206,14 @@ export function ChatClient({
             {stream.isLoading ? (
               <button
                 type="button"
-                className={styles.stop}
+                className={styles.pause}
                 onClick={() => void handleStop()}
-                aria-label="Stop agent"
+                aria-label="Pause agent"
+                title="Pause"
               >
-                Stop
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <rect x="8" y="8" width="8" height="8" rx="1.5" />
+                </svg>
               </button>
             ) : (
               <button
@@ -218,8 +221,13 @@ export function ChatClient({
                 className={styles.submit}
                 onClick={() => void submit()}
                 disabled={!draft.trim()}
+                aria-label="Run task"
+                title="Run task"
               >
-                Run task
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 19V5" />
+                  <path d="M6 11l6-6 6 6" />
+                </svg>
               </button>
             )}
           </div>

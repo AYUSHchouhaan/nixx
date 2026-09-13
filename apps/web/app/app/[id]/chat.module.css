@@ -305,47 +305,53 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 38px;
-  padding: 0 18px;
-  border-radius: 8px;
-  border: 1px solid transparent;
-  background: var(--ink);
-  color: var(--bg);
-  font-size: 14px;
-  font-weight: 500;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: var(--run-blue);
+  color: #ffffff;
   cursor: pointer;
-  transition:
-    background-color 140ms ease,
-    color 140ms ease;
-}
-
-.submit:hover:not(:disabled) {
-  background: var(--ink-2);
-}
-
-.submit:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.stop {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 38px;
-  padding: 0 18px;
-  border-radius: 8px;
-  border: 1px solid transparent;
-  background: var(--danger);
-  color: var(--bg);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
+  flex-shrink: 0;
   transition: background-color 140ms ease;
 }
 
-.stop:hover {
-  background: var(--danger-ink);
+.submit svg {
+  width: 18px;
+  height: 18px;
+}
+
+.submit:hover:not(:disabled) {
+  background: var(--run-blue-strong);
+}
+
+.submit:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.pause {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: var(--run-blue);
+  color: #ffffff;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 140ms ease;
+}
+
+.pause svg {
+  width: 16px;
+  height: 16px;
+}
+
+.pause:hover {
+  background: var(--run-blue-strong);
 }
 
 @media (prefers-reduced-motion: reduce) {
