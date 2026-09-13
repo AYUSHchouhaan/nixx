@@ -15,6 +15,8 @@
   --danger: #dc2626;
   --danger-ink: #b91c1c;
   --danger-soft: #fdecec;
+  --run-blue: #2563eb;
+  --run-blue-strong: #1d4ed8;
 
   --ring: 2px solid var(--ink);
   --max-width: 1120px;
