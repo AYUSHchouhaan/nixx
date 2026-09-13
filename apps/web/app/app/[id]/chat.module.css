@@ -470,21 +470,47 @@
 .editList {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .editItem {
-  display: grid;
-  grid-template-columns: 12px 1fr;
-  gap: 8px 10px;
-  align-items: start;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.editLine {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+}
+
+.editLine[data-kind="removed"] {
+  background: var(--danger-soft);
+}
+
+.editLine[data-kind="added"] {
+  background: var(--accent-soft);
 }
 
 .editMarker {
+  flex-shrink: 0;
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 12.5px;
   line-height: 1.6;
-  color: var(--ink-3);
+  font-weight: 600;
+}
+
+.editLine[data-kind="removed"] .editMarker,
+.editLine[data-kind="removed"] .editCode {
+  color: var(--danger-ink);
+}
+
+.editLine[data-kind="added"] .editMarker,
+.editLine[data-kind="added"] .editCode {
+  color: var(--accent-ink);
 }
 
 .editCode {

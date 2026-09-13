@@ -278,10 +278,14 @@ function ActionDetails({ action }: { action: ActionItemProps }) {
         <div className={styles.editList}>
           {action.edits.map((edit, index) => (
             <div key={index} className={styles.editItem}>
-              <span className={styles.editMarker}>-</span>
-              <code className={styles.editCode}>{edit.oldStr}</code>
-              <span className={styles.editMarker}>+</span>
-              <code className={styles.editCode}>{edit.newStr}</code>
+              <div className={styles.editLine} data-kind="removed">
+                <span className={styles.editMarker}>-</span>
+                <code className={styles.editCode}>{edit.oldStr}</code>
+              </div>
+              <div className={styles.editLine} data-kind="added">
+                <span className={styles.editMarker}>+</span>
+                <code className={styles.editCode}>{edit.newStr}</code>
+              </div>
             </div>
           ))}
         </div>
