@@ -34,9 +34,9 @@
 .textarea::placeholder { color: var(--ink-3); }
 .inputFoot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px 10px 14px; }
 .hint { font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 11px; color: var(--ink-3); }
-.submit { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px 0 14px; border: 1px solid transparent; border-radius: 8px; background: var(--ink); color: var(--bg); font-size: 13px; font-weight: 500; cursor: pointer; transition: background-color 140ms ease, color 140ms ease; }
-.submit svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; }
-.submit:hover:not(:disabled) { background: var(--ink-2); }
+.submit { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: none; border-radius: 50%; background: var(--run-blue); color: #ffffff; cursor: pointer; flex-shrink: 0; transition: background-color 140ms ease, transform 140ms ease; }
+.submit svg { width: 18px; height: 18px; }
+.submit:hover:not(:disabled) { background: var(--run-blue-strong); }
 .submit:disabled { opacity: .45; cursor: default; }
 .error { margin-top: 12px; padding: 10px 13px; border: 1px solid var(--danger); border-radius: 9px; background: var(--danger-soft); color: var(--danger-ink); font-size: 13px; line-height: 1.5; }
 .activity { padding-top: 34px; }

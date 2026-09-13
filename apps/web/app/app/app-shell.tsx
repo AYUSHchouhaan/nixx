@@ -235,9 +235,12 @@ export function AppShell({
                   onClick={() => void handleSubmit()}
                   disabled={!prompt.trim() || !selectedRepo || !selectedBranch || loading}
                   aria-label="Run task"
+                  title="Run task"
                 >
-                  <span>{loading ? "Starting" : "Run task"}</span>
-                  <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8 9-5-2.2 5L12 13 3 8Z" /></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 19V5" />
+                    <path d="M6 11l6-6 6 6" />
+                  </svg>
                 </button>
               </div>
             </div>
