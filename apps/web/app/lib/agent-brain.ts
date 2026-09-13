@@ -71,6 +71,14 @@ export async function* streamAgent(
   });
 }
 
+export async function cancelAgentRun(threadId: string) {
+  await client.runs.cancelMany({
+    threadId,
+    status: "running",
+    action: "rollback",
+  });
+}
+
 export async function getThreadMessages(threadId: string): Promise<ChatMessage[]> {
   try {
     await createAgentThread(threadId);
