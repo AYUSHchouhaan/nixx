@@ -1,7 +1,8 @@
 import { END, START, StateGraph } from "@langchain/langgraph";
-import { AIMessage, HumanMessage } from "@langchain/core/messages";
+import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { ProgrammerStateAnnotation } from "./types";
 import type { ProgrammerState, ProgrammerGraphDeps } from "./types";
+import { buildSystemPrompt } from "./lib/system-prompt";
 import {
   generateActionNode,
   takeActionNode,
@@ -16,13 +17,14 @@ function appendUserMessageNode(
   state: ProgrammerState,
 ): Partial<ProgrammerState> {
   const userMessage = new HumanMessage(state.query);
+  const systemMessage = new SystemMessage(buildSystemPrompt(state.query));
   const internalUserMessage = new HumanMessage(
     `Query: "${state.query}"\n\nStart implementing this now. Go directly to the work - do not over-investigate.`,
   );
 
   return {
     messages: [userMessage],
-    internalMessages: [internalUserMessage],
+    internalMessages: [systemMessage, internalUserMessage],
   };
 }
 
