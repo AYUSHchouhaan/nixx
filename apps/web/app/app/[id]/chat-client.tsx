@@ -51,6 +51,7 @@ export function ChatClient({
     const text = draft.trim();
     if (!text || stream.isLoading) return;
 
+    setDraft("");
     setError(null);
     try {
       const input: AgentInput = {
@@ -63,7 +64,6 @@ export function ChatClient({
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to run agent");
     }
-    setDraft("");
   }, [draft, stream, repoUrl, branch]);
 
   useEffect(() => {
