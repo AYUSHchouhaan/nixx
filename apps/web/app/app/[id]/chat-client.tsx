@@ -66,6 +66,15 @@ export function ChatClient({
     }
   }, [draft, stream, repoUrl, branch]);
 
+  const handleStop = useCallback(async () => {
+    await stream.stop();
+    try {
+      await fetch(`/api/threads/${threadId}/run/cancel`, { method: "POST" });
+    } catch {
+      // The local stream is already stopped; a failed cancel is non-fatal.
+    }
+  }, [stream, threadId]);
+
   useEffect(() => {
     if (
       initialPromptConsumed.current ||
@@ -194,14 +203,25 @@ export function ChatClient({
           />
           <div className={styles.composerFoot}>
             <span className={styles.hint}>Enter to run</span>
-            <button
-              type="button"
-              className={styles.submit}
-              onClick={() => void submit()}
-              disabled={!draft.trim() || stream.isLoading}
-            >
-              {stream.isLoading ? "Running…" : "Run task"}
-            </button>
+            {stream.isLoading ? (
+              <button
+                type="button"
+                className={styles.stop}
+                onClick={() => void handleStop()}
+                aria-label="Stop agent"
+              >
+                Stop
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={styles.submit}
+                onClick={() => void submit()}
+                disabled={!draft.trim()}
+              >
+                Run task
+              </button>
+            )}
           </div>
         </div>
       </main>

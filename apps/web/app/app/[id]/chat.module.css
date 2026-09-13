@@ -328,6 +328,26 @@
   cursor: default;
 }
 
+.stop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  padding: 0 18px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: var(--danger);
+  color: var(--bg);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 140ms ease;
+}
+
+.stop:hover {
+  background: var(--danger-ink);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .thinkingDot {
     animation: none;
