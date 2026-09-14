@@ -12,9 +12,19 @@ async function storeGitHubAccountCredentials(accessToken: string) {
 export const GITHUB_ACCESS_TOKEN_COOKIE = "GITHUB_ACCESS_TOKEN_COOKIE";
 export const GITHUB_INSTALLATION_ID_COOKIE = "GITHUB_INSTALLATION_ID_COOKIE";
 
+// Match Better Auth's default session lifetime (7 days) so these cookies
+// don't vanish as session cookies while the user is still signed in.
+const GITHUB_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
+
 export async function storeGitHubCredentials(accessToken: string, installationId: number) {
   const cookieStore = await cookies();
-  const options = { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" as const, path: "/" };
+  const options = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: GITHUB_COOKIE_MAX_AGE,
+  };
   cookieStore.set(GITHUB_ACCESS_TOKEN_COOKIE, accessToken, options);
   cookieStore.set(GITHUB_INSTALLATION_ID_COOKIE, String(installationId), options);
 }
