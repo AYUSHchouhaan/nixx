@@ -59,7 +59,10 @@ export function AppShell({
     (async () => {
       try {
         const res = await fetch("/api/github/repositories");
-        if (!res.ok) throw new Error("Failed to load repositories");
+        if (!res.ok) {
+          const body = (await res.json().catch(() => null)) as { error?: string } | null;
+          throw new Error(body?.error ?? "Failed to load repositories");
+        }
         const data = (await res.json()) as { repositories: Repository[] };
         if (active) setRepositories(data.repositories);
       } catch (err) {
@@ -93,7 +96,10 @@ export function AppShell({
           repo: selectedRepo.name,
         });
         const res = await fetch(`/api/github/branches?${params.toString()}`);
-        if (!res.ok) throw new Error("Failed to load branches");
+        if (!res.ok) {
+          const body = (await res.json().catch(() => null)) as { error?: string } | null;
+          throw new Error(body?.error ?? "Failed to load branches");
+        }
         const data = (await res.json()) as { branches: Branch[] };
         if (active) {
           setBranches(data.branches);
