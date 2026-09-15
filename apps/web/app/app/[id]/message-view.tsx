@@ -393,6 +393,28 @@ function HumanMessageView({ message }: { message: MessageLike }) {
   );
 }
 
+function EnvironmentStatusView({ message }: { message: MessageLike }) {
+  const steps = contentToText(message.content).split("\n").filter(Boolean);
+  const [title, ...items] = steps;
+
+  return (
+    <div className={styles.environmentStatus}>
+      <div className={styles.environmentTitle}>
+        <span className={styles.environmentCheck} aria-hidden="true">✓</span>
+        {title}
+      </div>
+      <div className={styles.environmentItems}>
+        {items.map((item) => (
+          <div className={styles.environmentItem} key={item}>
+            <span className={styles.environmentCheck} aria-hidden="true">✓</span>
+            {item}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function MessageView({
   message,
   messages,
@@ -400,6 +422,10 @@ export function MessageView({
   message: MessageLike;
   messages: MessageLike[];
 }) {
+  if (message.name === "environment-status") {
+    return <EnvironmentStatusView message={message} />;
+  }
+
   if (message.type === "human") {
     return <HumanMessageView message={message} />;
   }

@@ -217,6 +217,51 @@
   background: var(--danger-soft);
 }
 
+.environmentStatus {
+  max-width: 720px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-subtle);
+  overflow: hidden;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.environmentTitle,
+.environmentItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+}
+
+.environmentTitle {
+  font-weight: 500;
+  background: var(--surface);
+}
+
+.environmentItems {
+  padding: 2px 0;
+}
+
+.environmentItem {
+  color: var(--ink-3);
+}
+
+.environmentCheck {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
 .thinking {
   display: flex;
   align-items: center;
