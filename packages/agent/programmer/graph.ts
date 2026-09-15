@@ -28,6 +28,10 @@ function appendUserMessageNode(
   };
 }
 
+function routeAfterSandbox(state: ProgrammerState): string {
+  return state.environmentReady ? "create-empty-pr" : "end";
+}
+
 function routeAfterGenerateAction(state: ProgrammerState): string {
   const lastAI = [...state.messages]
     .reverse()
@@ -74,7 +78,10 @@ export function createProgrammerGraph(deps: ProgrammerGraphDeps) {
     .addNode("end-conclusion", endConclusionNode)
     .addEdge(START, "append-user-message")
     .addEdge("append-user-message", "prepare-sandbox")
-    .addEdge("prepare-sandbox", "create-empty-pr")
+    .addConditionalEdges("prepare-sandbox", routeAfterSandbox, {
+      "create-empty-pr": "create-empty-pr",
+      end: END,
+    })
     .addEdge("create-empty-pr", "generate-action")
     .addConditionalEdges("generate-action", routeAfterGenerateAction, {
       "take-action": "take-action",

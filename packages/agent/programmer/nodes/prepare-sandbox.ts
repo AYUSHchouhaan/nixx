@@ -17,24 +17,40 @@ export async function prepareSandboxNode(
   const branch =
     typeof branchValue === "string" && branchValue ? branchValue : undefined;
 
-  const result = await deps.sandboxClient.provision({
-    threadId,
-    sandboxId,
-    repoUrl,
-    branch,
-    installationToken,
-  });
+  try {
+    const result = await deps.sandboxClient.provision({
+      threadId,
+      sandboxId,
+      repoUrl,
+      branch,
+      installationToken,
+    });
 
-  if (result.error) {
-    throw new Error(result.error);
+    if (result.error) {
+      throw new Error(result.error);
+    }
+
+    return {
+      environmentReady: true,
+      messages: [
+        new AIMessage({
+          name: "environment-status",
+          content: "Environment ready\nCreating sandbox\nCloning repository",
+        }),
+      ],
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Environment setup failed";
+
+    return {
+      environmentReady: false,
+      messages: [
+        new AIMessage({
+          name: "environment-status",
+          content: `Environment setup failed\n${message}`,
+          additional_kwargs: { status: "error" },
+        }),
+      ],
+    };
   }
-
-  return {
-    messages: [
-      new AIMessage({
-        name: "environment-status",
-        content: "Environment ready\nCreating sandbox\nCloning repository",
-      }),
-    ],
-  };
 }
