@@ -1,3 +1,4 @@
+import { AIMessage } from "@langchain/core/messages";
 import type { ProgrammerState, ProgrammerGraphDeps } from "../types";
 import type { RunnableConfig } from "@langchain/core/runnables";
 import { getConfigurableString } from "../lib/config";
@@ -28,5 +29,12 @@ export async function prepareSandboxNode(
     throw new Error(result.error);
   }
 
-  return {};
+  return {
+    messages: [
+      new AIMessage({
+        name: "environment-status",
+        content: "Environment ready\nCreating sandbox\nCloning repository",
+      }),
+    ],
+  };
 }
