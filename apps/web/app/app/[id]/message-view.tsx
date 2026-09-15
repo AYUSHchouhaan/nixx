@@ -396,17 +396,25 @@ function HumanMessageView({ message }: { message: MessageLike }) {
 function EnvironmentStatusView({ message }: { message: MessageLike }) {
   const steps = contentToText(message.content).split("\n").filter(Boolean);
   const [title, ...items] = steps;
+  const isError = message.additional_kwargs?.status === "error";
 
   return (
-    <div className={styles.environmentStatus}>
+    <div
+      className={styles.environmentStatus}
+      data-state={isError ? "error" : "done"}
+    >
       <div className={styles.environmentTitle}>
-        <span className={styles.environmentCheck} aria-hidden="true">✓</span>
+        <span className={styles.environmentCheck} aria-hidden="true">
+          {isError ? "!" : "✓"}
+        </span>
         {title}
       </div>
       <div className={styles.environmentItems}>
         {items.map((item) => (
           <div className={styles.environmentItem} key={item}>
-            <span className={styles.environmentCheck} aria-hidden="true">✓</span>
+            <span className={styles.environmentCheck} aria-hidden="true">
+              {isError ? "!" : "✓"}
+            </span>
             {item}
           </div>
         ))}
