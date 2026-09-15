@@ -248,6 +248,20 @@
   color: var(--ink-3);
 }
 
+.environmentStatus[data-state="error"] {
+  border-color: var(--danger);
+  color: var(--danger-ink);
+}
+
+.environmentStatus[data-state="error"] .environmentTitle {
+  background: var(--danger-soft);
+}
+
+.environmentStatus[data-state="error"] .environmentCheck {
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+}
+
 .environmentCheck {
   display: inline-flex;
   align-items: center;
