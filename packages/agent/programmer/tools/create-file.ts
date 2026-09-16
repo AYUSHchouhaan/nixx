@@ -23,7 +23,7 @@ export function createFileTool(deps: ProgrammerGraphDeps) {
     {
       name: "create_file",
       description:
-        'Create a brand-new file inside the sandbox with the given content. Only use this when the file does NOT exist yet. Use "edit" to modify existing files.',
+        'Create a new repository file with the given complete content. Use this only after confirming the file does not exist; use "edit" to modify an existing file. Do not create backup or duplicate files.',
       schema: z.object({
         filePath: z
           .string()
