@@ -41,7 +41,7 @@ function routeAfterGenerateAction(state: ProgrammerState): string {
     return "take-action";
   }
 
-  return "open-pull-request";
+  return "end-conclusion";
 }
 
 function routeAfterTakeAction(state: ProgrammerState): string {
@@ -50,7 +50,7 @@ function routeAfterTakeAction(state: ProgrammerState): string {
     .find((m) => m.getType() === "ai") as AIMessage | undefined;
 
   if (lastAI?.tool_calls?.some((tc) => tc.name === "mark_task_complete")) {
-    return "open-pull-request";
+    return "end-conclusion";
   }
 
   return "generate-action";
@@ -85,16 +85,16 @@ export function createProgrammerGraph(deps: ProgrammerGraphDeps) {
     .addEdge("create-empty-pr", "generate-action")
     .addConditionalEdges("generate-action", routeAfterGenerateAction, {
       "take-action": "take-action",
-      "open-pull-request": "open-pull-request",
+      "end-conclusion": "end-conclusion",
       "reasoning-thinking": "reasoning-thinking",
     })
     .addConditionalEdges("take-action", routeAfterTakeAction, {
       "generate-action": "generate-action",
-      "open-pull-request": "open-pull-request",
+      "end-conclusion": "end-conclusion",
     })
     .addEdge("reasoning-thinking", "generate-action")
-    .addEdge("open-pull-request", "end-conclusion")
-    .addEdge("end-conclusion", END);
+    .addEdge("end-conclusion", "open-pull-request")
+    .addEdge("open-pull-request", END);
 
   const graph = workflow.compile({ checkpointer: deps.checkpointer });
   graph.name = "Programmer Agent — Execute Tasks";
