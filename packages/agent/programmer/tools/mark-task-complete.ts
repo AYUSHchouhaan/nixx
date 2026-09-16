@@ -16,7 +16,7 @@ export function createMarkTaskCompleteTool() {
     {
       name: 'mark_task_complete',
       description:
-        'Call this tool ONLY when the current task is fully implemented and there is not need to go further and wanna end the loop . Provide a concise summary (20–30 words) of what was done.',
+        "Call this signal-only tool only after the requested work is implemented and relevant verification is complete. Do not call it with any other tool. Include a concise 20–30 word summary of what changed, which checks were run, their result, and any unresolved issue.",
       schema: z.object({
         summary: z
           .string()
