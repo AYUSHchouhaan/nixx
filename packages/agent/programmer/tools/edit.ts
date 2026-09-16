@@ -23,7 +23,7 @@ export function createEditTool(deps: ProgrammerGraphDeps) {
     {
       name: "edit",
       description:
-        "Edit one existing file inside the sandbox by applying an ordered list of {oldStr, newStr} replacements. For each item, oldStr must match exactly (including whitespace). Automatically handles Windows (CRLF) vs Unix (LF) line ending differences.",
+        "Edit one existing repository file by applying ordered {oldStr, newStr} replacements. Read the file first. Each oldStr must match the exact current text, including whitespace; include enough surrounding context to make it unique. Each replacement changes only the first matching occurrence. Automatically handles Windows (CRLF) versus Unix (LF) line endings.",
       schema: z.object({
         filePath: z
           .string()
