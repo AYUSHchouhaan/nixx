@@ -19,7 +19,7 @@ export function createReadTool(deps: ProgrammerGraphDeps) {
     {
       name: "read",
       description:
-        "Read the full content of 1-6 files in parallel inside the sandbox. Only include files that are directly relevant to the task.",
+        "Read the full content of 1-6 existing, repository-relative files in parallel. Read only files directly relevant to the task, and read a file before editing it. Avoid reading large or unrelated files when a narrower inspection is sufficient.",
       schema: z.object({
         filePaths: z
           .array(z.string())
