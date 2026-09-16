@@ -29,15 +29,21 @@ export async function executeSandboxCommand(
         exitCode: 0,
       };
     case "glob":
-      return {
-        output: await globFiles(sandbox, repoDir, (args.patterns as string[]) ?? []),
-        exitCode: 0,
-      };
+      return globFiles(
+        sandbox,
+        repoDir,
+        (args.patterns as string[]) ?? [],
+        Number(args.maxResults ?? 200),
+        Boolean(args.includeDirectories),
+        Boolean(args.followSymlinks),
+      );
     case "grep":
-      return {
-        output: await grepFiles(sandbox, repoDir, String(args.query ?? "")),
-        exitCode: 0,
-      };
+      return grepFiles(
+        sandbox,
+        repoDir,
+        String(args.query ?? ""),
+        Number(args.maxResults ?? 200),
+      );
     case "run_command":
       return runCommand(sandbox, repoDir, String(args.command ?? ""));
     case "create_file":
