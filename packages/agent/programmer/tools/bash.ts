@@ -11,8 +11,8 @@ export function createRunTool(deps: ProgrammerGraphDeps) {
         command: args.command,
       });
 
-      if (result.error) {
-        return `Error: ${result.error}`;
+      if (result.error || result.exitCode !== 0) {
+        return `Command failed with exit code ${result.exitCode}:\n${result.error ?? result.output}`;
       }
       return result.output;
     },
