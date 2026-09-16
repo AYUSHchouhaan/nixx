@@ -6,9 +6,20 @@ import type { ProgrammerGraphDeps } from "../types";
 
 export function createGlobTool(deps: ProgrammerGraphDeps) {
   return tool(
-    async (args: { patterns: string[] }, config: RunnableConfig) => {
+    async (
+      args: {
+        patterns: string[];
+        maxResults?: number;
+        includeDirectories?: boolean;
+        followSymlinks?: boolean;
+      },
+      config: RunnableConfig,
+    ) => {
       const result = await sandboxCall(deps, config, "glob", {
         patterns: args.patterns,
+        maxResults: args.maxResults,
+        includeDirectories: args.includeDirectories,
+        followSymlinks: args.followSymlinks,
       });
 
       if (result.error) {
@@ -19,15 +30,30 @@ export function createGlobTool(deps: ProgrammerGraphDeps) {
     {
       name: "glob",
       description:
-        'Find files by path pattern inside the sandbox. Provide up to 7 glob patterns such as "**/src/**/*.ts" or "**/*.js" to locate files without reading contents.',
+        "Find repository-relative file paths using glob patterns. Searches automatically exclude node_modules, .git, build output, and cache directories. Use a narrow pattern such as src/**/*.ts, **/*.tsx, or packages/*/src/**; broad patterns such as **/* are rejected. Results are sorted, capped, and report when truncated.",
       schema: z.object({
         patterns: z
-          .array(z.string())
+          .array(z.string().min(1))
           .min(1)
           .max(7)
           .describe(
-            'Up to 7 glob patterns. Always use **/ prefix for directory names, e.g. ["**/src/**/*.ts", "**/components/**/*.tsx", "**/*.js"].',
+            'Repository-relative patterns, for example ["src/**/*.ts", "**/*.tsx", "packages/*/src/**"]. Do not use absolute paths, .. segments, or broad **/* searches.',
           ),
+        maxResults: z
+          .number()
+          .int()
+          .min(1)
+          .max(200)
+          .optional()
+          .describe("Maximum number of paths to return; defaults to 200."),
+        includeDirectories: z
+          .boolean()
+          .optional()
+          .describe("Reserved for directory-aware search backends."),
+        followSymlinks: z
+          .boolean()
+          .optional()
+          .describe("Whether to follow symlinks while searching."),
       }),
     },
   );
