@@ -30,7 +30,7 @@ export function createGlobTool(deps: ProgrammerGraphDeps) {
     {
       name: "glob",
       description:
-        "Find repository-relative file paths using glob patterns. Searches automatically exclude node_modules, .git, build output, and cache directories. Use a narrow pattern such as src/**/*.ts, **/*.tsx, or packages/*/src/**; broad patterns such as **/* are rejected. Results are sorted, capped, and report when truncated.",
+        "Find repository-relative file paths using glob patterns. Searches automatically exclude node_modules, .git, build output, and cache directories. Use a narrow pattern such as src/**/*.ts, **/*.tsx, or packages/*/src/**; broad patterns such as **/* are rejected. Results are sorted, capped, and report when truncated. Use this to locate files, not to read their contents.",
       schema: z.object({
         patterns: z
           .array(z.string().min(1))
