@@ -19,7 +19,7 @@ export function createRunTool(deps: ProgrammerGraphDeps) {
     {
       name: "run",
       description:
-        "Run a shell command inside the sandbox and return its output. Use for checks like test/build/list/status.",
+        "Run a shell command in the repository sandbox and return its output. Use for tests, builds, typechecks, lint, formatting, git diagnostics, and other repository checks. The repository is the working directory; output may be limited by the sandbox. Prefer read, glob, or grep for file inspection. Exit code 0 means success; any nonzero exit code means the command failed.",
       schema: z.object({
         command: z.string().describe("Shell command to execute inside the sandbox."),
       }),
