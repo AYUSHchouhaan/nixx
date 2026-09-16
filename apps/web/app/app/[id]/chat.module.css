@@ -385,22 +385,25 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  border: none;
+  border: 2px solid var(--run-blue-strong);
   border-radius: 50%;
-  background: var(--run-blue);
+  background: var(--run-blue-strong);
   color: #ffffff;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background-color 140ms ease;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--ink) 18%, transparent);
+  transition: background-color 140ms ease, border-color 140ms ease;
 }
 
 .pause svg {
   width: 20px;
   height: 20px;
+  fill: #ffffff;
 }
 
 .pause:hover {
-  background: var(--run-blue-strong);
+  border-color: var(--ink);
+  background: var(--ink);
 }
 
 @media (prefers-reduced-motion: reduce) {

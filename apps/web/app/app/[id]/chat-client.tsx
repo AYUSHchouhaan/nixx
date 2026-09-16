@@ -67,12 +67,11 @@ export function ChatClient({
   }, [draft, stream, repoUrl, branch]);
 
   const handleStop = useCallback(async () => {
-    await stream.stop();
-    try {
-      await fetch(`/api/threads/${threadId}/run/cancel`, { method: "POST" });
-    } catch {
-      // The local stream is already stopped; a failed cancel is non-fatal.
-    }
+    const cancelRequest = fetch(`/api/threads/${threadId}/run/cancel`, {
+      method: "POST",
+    });
+
+    await Promise.allSettled([stream.stop(), cancelRequest]);
   }, [stream, threadId]);
 
   useEffect(() => {
