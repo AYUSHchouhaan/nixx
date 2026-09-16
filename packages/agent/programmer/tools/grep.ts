@@ -23,7 +23,7 @@ export function createGrepTool(deps: ProgrammerGraphDeps) {
     {
       name: "grep",
       description:
-        "Search repository files with a case-insensitive regular expression. Searches automatically exclude node_modules, .git, build output, and cache directories. Returns matching repository-relative paths, line numbers, and lines; results are sorted, capped, and report when truncated. Use a narrow pattern or query a specific path when possible.",
+        "Search repository files with a case-insensitive regular expression. Searches automatically exclude node_modules, .git, build output, and cache directories. Returns matching repository-relative paths, line numbers, and lines; results are sorted, capped, and report when truncated. Use a narrow pattern or query a specific path when possible. Use read to inspect the surrounding file after locating a match.",
       schema: z.object({
         query: z
           .string()
