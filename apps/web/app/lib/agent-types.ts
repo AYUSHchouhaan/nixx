@@ -61,7 +61,7 @@ export const agentInputSchema = z.object({
   query: z.string(),
   repoUrl: z.string(),
   branch: z.string(),
-  multitask_strategy: z.literal("interrupt"),
+  multitask_strategy: z.literal("interrupt").optional(),
 });
 
 export type ThreadState = z.infer<typeof threadStateSchema>;

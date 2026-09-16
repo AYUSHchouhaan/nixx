@@ -58,7 +58,6 @@ export function ChatClient({
         query: text,
         repoUrl,
         branch,
-        multitask_strategy: "interrupt",
       };
       await stream.submit(input);
     } catch (err) {
@@ -97,7 +96,6 @@ export function ChatClient({
       query: initialPrompt,
       repoUrl,
       branch,
-      multitask_strategy: "interrupt",
     };
 
     void stream.submit(input).catch((err: unknown) => {
