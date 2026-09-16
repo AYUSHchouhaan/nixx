@@ -5,6 +5,8 @@ import { eq } from "drizzle-orm";
 import { db } from "@repo/db";
 import { threads } from "@repo/db/schema";
 import {
+  getActiveAgentRun,
+  joinAgentRun,
   streamAgent,
   type AgentStreamChunk,
 } from "../../../../lib/agent-brain";
@@ -83,6 +85,55 @@ async function buildStream(input: StreamBuild): Promise<StreamResult> {
   }
 }
 
+async function buildReconnectStream(threadId: string): Promise<StreamResult> {
+  try {
+    const run = await getActiveAgentRun(threadId);
+    if (!run) {
+      return {
+        ok: false,
+        response: new Response(null, { status: 204 }),
+      };
+    }
+
+    return {
+      ok: true,
+      stream: joinAgentRun(threadId, run.run_id),
+    };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to reconnect agent stream";
+    return {
+      ok: false,
+      response: NextResponse.json({ error: message }, { status: 500 }),
+    };
+  }
+}
+
+function createSseResponse(stream: AsyncGenerator<AgentStreamChunk>) {
+  const body = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      try {
+        for await (const chunk of stream) {
+          controller.enqueue(encode(chunk.event, chunk.data));
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Agent stream failed";
+        controller.enqueue(
+          encode("error", { error: "stream_failed", message }),
+        );
+      } finally {
+        controller.close();
+      }
+    },
+    cancel() {
+      void stream.return?.(undefined);
+    },
+  });
+
+  return new Response(body, { headers: SSE_HEADERS });
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ threadId: string }> },
@@ -104,10 +155,6 @@ export async function POST(
 
   const query = body.input?.query ?? body.query ?? "";
 
-  if (!query) {
-    return new Response("query is required", { status: 400 });
-  }
-
   const [thread] = await db
     .select()
     .from(threads)
@@ -116,6 +163,15 @@ export async function POST(
 
   if (!thread || thread.userId !== session.user.id) {
     return new Response("Thread not found", { status: 404 });
+  }
+
+  if (!query) {
+    const result = await buildReconnectStream(threadId);
+    if (!result.ok) {
+      return result.response;
+    }
+
+    return createSseResponse(result.stream);
   }
 
   const metadata = threadMetadataSchema.parse(thread.metadata ?? {});
@@ -149,26 +205,5 @@ export async function POST(
     return result.response;
   }
 
-  const bodyStream = new ReadableStream<Uint8Array>({
-    async start(controller) {
-      try {
-        for await (const chunk of result.stream) {
-          controller.enqueue(encode(chunk.event, chunk.data));
-        }
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Agent stream failed";
-        controller.enqueue(
-          encode("error", { error: "stream_failed", message }),
-        );
-      } finally {
-        controller.close();
-      }
-    },
-    cancel() {
-      void result.stream.return?.(undefined);
-    },
-  });
-
-  return new Response(bodyStream, { headers: SSE_HEADERS });
+  return createSseResponse(result.stream);
 }

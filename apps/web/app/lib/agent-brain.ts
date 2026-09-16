@@ -71,6 +71,25 @@ export async function* streamAgent(
   });
 }
 
+export async function getActiveAgentRun(threadId: string) {
+  const runs = await client.runs.list(threadId, {
+    status: "running",
+    limit: 1,
+  });
+
+  return runs[0] ?? null;
+}
+
+export async function* joinAgentRun(
+  threadId: string,
+  runId: string,
+): AsyncGenerator<AgentStreamChunk> {
+  yield* client.runs.joinStream(threadId, runId, {
+    cancelOnDisconnect: false,
+    streamMode: ["values", "messages", "messages-tuple"],
+  });
+}
+
 export async function cancelAgentRun(threadId: string) {
   await client.runs.cancelMany({
     threadId,
