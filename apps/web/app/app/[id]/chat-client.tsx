@@ -30,6 +30,7 @@ export function ChatClient({
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<MessageLike[]>(initialMessages);
   const initialPromptConsumed = useRef(false);
+  const reconnectAttempted = useRef(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const transport = useMemo(
@@ -72,6 +73,17 @@ export function ChatClient({
 
     await Promise.allSettled([stream.stop(), cancelRequest]);
   }, [stream, threadId]);
+
+  useEffect(() => {
+    if (initialPrompt || reconnectAttempted.current) {
+      return;
+    }
+
+    reconnectAttempted.current = true;
+    void stream.submit(null).catch((err: unknown) => {
+      setError(err instanceof Error ? err.message : "Failed to reconnect");
+    });
+  }, [initialPrompt, stream]);
 
   useEffect(() => {
     if (
