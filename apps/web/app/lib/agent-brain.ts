@@ -75,7 +75,7 @@ export async function cancelAgentRun(threadId: string) {
   await client.runs.cancelMany({
     threadId,
     status: "running",
-    action: "rollback",
+    action: "interrupt",
   });
 }
 
