@@ -106,6 +106,8 @@
 }
 
 .messages {
+  width: min(100%, 840px);
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -417,6 +419,8 @@
 }
 
 .composer {
+  width: min(100%, 840px);
+  margin: 0 auto;
   flex-shrink: 0;
   display: flex;
   align-items: flex-end;
