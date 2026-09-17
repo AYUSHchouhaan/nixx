@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useStream, FetchStreamTransport } from "@langchain/langgraph-sdk/react";
+import Markdown from "react-markdown";
 import {
   type AgentInput,
   type ChatState,
@@ -176,7 +177,9 @@ export function ChatClient({
               {summary && !stream.isLoading ? (
                 <div className={styles.aiRow}>
                   <div className={styles.aiBubble}>
-                    <p className={styles.text}>{summary}</p>
+                    <div className={styles.summaryMarkdown}>
+                      <Markdown>{summary}</Markdown>
+                    </div>
                   </div>
                 </div>
               ) : null}

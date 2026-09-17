@@ -23,7 +23,9 @@ export async function endConclusionNode(
 
   const response = await llm.invoke([
     new SystemMessage(
-      "You are summarising a completed coding session. Write a clear, concise summary of what was done.",
+      "You are summarising a completed coding session. Write a clear, concise summary of what was done. " +
+        "Format the summary in Markdown: use short headings, bullet lists, and fenced code blocks for file paths, commands, and code snippets. " +
+        "Do not wrap the whole summary in a code block.",
     ),
     new HumanMessage(
       `Original Query: "${state.query}"\n\nKey Events:\n${sessionSummary}\n\nWrite the final summary now.`,
