@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createAuthClient } from "better-auth/client";
@@ -54,30 +54,67 @@ export function AppShell({
 
   const [threads] = useState<Thread[]>(initialThreads);
 
+  const mountedRef = useRef(true);
+
   useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const res = await fetch("/api/github/repositories");
-        if (!res.ok) {
-          const body = (await res.json().catch(() => null)) as { error?: string } | null;
-          throw new Error(body?.error ?? "Failed to load repositories");
-        }
-        const data = (await res.json()) as { repositories: Repository[] };
-        if (active) setRepositories(data.repositories);
-      } catch (err) {
-        if (active) {
-          setError(
-            err instanceof Error ? err.message : "Failed to load repositories",
-          );
-        }
-      } finally {
-        if (active) setRepoLoading(false);
-      }
-    })();
+    mountedRef.current = true;
     return () => {
-      active = false;
+      mountedRef.current = false;
     };
+  }, []);
+
+  const loadRepositories = useCallback(async () => {
+    try {
+      const res = await fetch("/api/github/repositories");
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error ?? "Failed to load repositories");
+      }
+      const data = (await res.json()) as { repositories: Repository[] };
+      if (mountedRef.current) setRepositories(data.repositories);
+    } catch (err) {
+      if (mountedRef.current) {
+        setError(
+          err instanceof Error ? err.message : "Failed to load repositories",
+        );
+      }
+    } finally {
+      if (mountedRef.current) setRepoLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadRepositories();
+  }, [loadRepositories]);
+
+  const loadBranches = useCallback(async (repo: Repository) => {
+    setBranchLoading(true);
+    try {
+      const params = new URLSearchParams({
+        owner: repo.owner.login,
+        repo: repo.name,
+      });
+      const res = await fetch(`/api/github/branches?${params.toString()}`);
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error ?? "Failed to load branches");
+      }
+      const data = (await res.json()) as { branches: Branch[] };
+      if (mountedRef.current) {
+        setBranches(data.branches);
+        setSelectedBranch(
+          data.branches.find(
+            (branch) => branch.name === repo.default_branch,
+          )?.name ?? data.branches[0]?.name ?? "",
+        );
+      }
+    } catch (err) {
+      if (mountedRef.current) {
+        setError(err instanceof Error ? err.message : "Failed to load branches");
+      }
+    } finally {
+      if (mountedRef.current) setBranchLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -87,40 +124,8 @@ export function AppShell({
       return;
     }
 
-    let active = true;
-    setBranchLoading(true);
-    (async () => {
-      try {
-        const params = new URLSearchParams({
-          owner: selectedRepo.owner.login,
-          repo: selectedRepo.name,
-        });
-        const res = await fetch(`/api/github/branches?${params.toString()}`);
-        if (!res.ok) {
-          const body = (await res.json().catch(() => null)) as { error?: string } | null;
-          throw new Error(body?.error ?? "Failed to load branches");
-        }
-        const data = (await res.json()) as { branches: Branch[] };
-        if (active) {
-          setBranches(data.branches);
-          setSelectedBranch(
-            data.branches.find(
-              (branch) => branch.name === selectedRepo.default_branch,
-            )?.name ?? data.branches[0]?.name ?? "",
-          );
-        }
-      } catch (err) {
-        if (active) {
-          setError(err instanceof Error ? err.message : "Failed to load branches");
-        }
-      } finally {
-        if (active) setBranchLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [selectedRepo]);
+    void loadBranches(selectedRepo);
+  }, [selectedRepo, loadBranches]);
 
   const handleRepoChange = useCallback((fullName: string) => {
     const repo = repositories.find((item) => item.full_name === fullName);
