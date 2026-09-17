@@ -71,8 +71,7 @@
 .activitySub { margin-top: 4px; font-size: 12px; color: var(--ink-3); }
 .count { min-width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 7px; color: var(--ink-3); font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 11px; }
 .threadGrid { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.threadCard { border: 1px solid var(--border); border-radius: 10px; background: var(--surface); transition: border-color 140ms ease, background-color 140ms ease; }
-.threadCard:hover { border-color: var(--border-strong); background: var(--bg); }
+.threadCard { border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
 .listLink { display: flex; flex-direction: column; gap: 7px; min-width: 0; padding: 14px; }
 .cardTop { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .cardStatus { display: inline-flex; align-items: center; gap: 5px; color: var(--accent-ink); background: var(--accent-soft); border-radius: 999px; padding: 3px 7px; font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 10px; }
