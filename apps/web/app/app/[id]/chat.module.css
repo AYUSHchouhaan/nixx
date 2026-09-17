@@ -444,7 +444,7 @@
 }
 
 .composer {
-  width: min(100%, 840px);
+  width: min(100%, 890px);
   margin: 0 auto;
   flex-shrink: 0;
   display: flex;
