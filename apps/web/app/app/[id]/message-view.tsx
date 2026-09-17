@@ -297,7 +297,9 @@ function ActionDetails({ action }: { action: ActionItemProps }) {
   }
 
   return action.output ? (
-    <pre className={styles.toolOutput}>{action.output}</pre>
+    <div className={styles.toolDetails}>
+      <pre className={styles.toolOutput}>{action.output}</pre>
+    </div>
   ) : null;
 }
 
