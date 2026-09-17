@@ -3,10 +3,35 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  color-scheme: dark;
+
+  --bg: #1b1b1d;
+  --bg-subtle: #202022;
+  --surface: #242526;
+  --border: #2f2f32;
+  --border-strong: #3f3f43;
+  --ink: #e9e9eb;
+  --ink-2: #babbbf;
+  --ink-3: #909194;
+  --accent: #3fb950;
+  --accent-ink: #56d364;
+  --accent-soft: #122619;
+  --danger: #f87171;
+  --danger-ink: #fca5a5;
+  --danger-soft: #2a1215;
+  --ring: 2px solid var(--ink);
+}
+
+.shell ::selection {
+  background: var(--ink);
+  color: var(--bg);
 }
 
 .nav {
   border-bottom: 1px solid var(--border);
+  background: var(--surface);
 }
 
 .navInner {
@@ -427,7 +452,7 @@
   gap: 8px;
   border: 1px solid var(--border-strong);
   border-radius: 12px;
-  background: var(--bg);
+  background: var(--surface);
   padding: 8px 8px 8px 14px;
   transition: border-color 140ms ease;
 }
