@@ -1,5 +1,31 @@
-.shell { min-height: 100svh; }
-.nav { border-bottom: 1px solid var(--border); background: var(--bg); }
+.shell {
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--ink);
+  color-scheme: dark;
+
+  --bg: #1b1b1d;
+  --bg-subtle: #202022;
+  --surface: #242526;
+  --border: #2f2f32;
+  --border-strong: #3f3f43;
+  --ink: #e9e9eb;
+  --ink-2: #babbbf;
+  --ink-3: #909194;
+  --accent: #3fb950;
+  --accent-ink: #56d364;
+  --accent-soft: #122619;
+  --danger: #f87171;
+  --danger-ink: #fca5a5;
+  --danger-soft: #2a1215;
+  --ring: 2px solid var(--ink);
+}
+
+.shell ::selection {
+  background: var(--ink);
+  color: var(--bg);
+}
+.nav { border-bottom: 1px solid var(--border); background: var(--surface); }
 .navInner { max-width: var(--max-width); margin: 0 auto; padding: 0 24px; height: var(--nav-height); display: flex; align-items: center; gap: 24px; }
 .brand { display: inline-flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
 .brandMark { width: 18px; height: 18px; border: 1.5px solid var(--ink); border-radius: 5px; position: relative; flex-shrink: 0; }
@@ -27,7 +53,7 @@
 .select:hover:not(:disabled), .select:focus { border-color: var(--border-strong); background: var(--bg); outline: none; }
 .inputTop .select { max-width: 180px; height: 26px; padding: 0 18px 0 2px; border: none; border-radius: 4px; background: transparent; color: var(--ink-2); font-size: 11px; font-family: var(--font-geist-mono), ui-monospace, monospace; }
 .select:disabled { opacity: .58; cursor: default; }
-.inputBox { border: 1px solid var(--border-strong); border-radius: 12px; background: var(--bg); transition: border-color 140ms ease, box-shadow 140ms ease; }
+.inputBox { border: 1px solid var(--border-strong); border-radius: 12px; background: var(--surface); transition: border-color 140ms ease, box-shadow 140ms ease; }
 .inputBox:focus-within { border-color: var(--ink-2); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 6%, transparent); }
 .textarea { width: 100%; padding: 15px 16px 8px; border: none; background: transparent; color: var(--ink); font-size: 14px; line-height: 1.55; font-family: inherit; resize: vertical; min-height: 96px; }
 .textarea:focus { outline: none; }
