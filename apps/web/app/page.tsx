@@ -11,7 +11,7 @@ export default async function Home() {
   const openAppHref = signedIn ? "/app" : "/login";
 
   return (
-    <>
+    <div className={styles.page}>
       <header className={styles.nav}>
         <div className={styles.navInner}>
           <Link href="/" className={styles.brand}>
@@ -176,7 +176,7 @@ export default async function Home() {
           </span>
         </div>
       </footer>
-    </>
+    </div>
   );
 }
 
