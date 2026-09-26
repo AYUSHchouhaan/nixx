@@ -5,6 +5,7 @@ import { runGit } from "./git";
 import { globFiles, grepFiles } from "./search";
 import { readFiles } from "./read";
 import { runCommand } from "./run-command";
+import { startPreview, stopPreview } from "./preview";
 import type { SandboxExecutionResult } from "./types";
 
 export type SandboxCommandName =
@@ -14,7 +15,9 @@ export type SandboxCommandName =
   | "run_command"
   | "create_file"
   | "edit_file"
-  | "git";
+  | "git"
+  | "start_preview"
+  | "stop_preview";
 
 export async function executeSandboxCommand(
   sandbox: Sandbox,
@@ -46,6 +49,10 @@ export async function executeSandboxCommand(
       );
     case "run_command":
       return runCommand(sandbox, repoDir, String(args.command ?? ""));
+    case "start_preview":
+      return startPreview(sandbox, repoDir, args);
+    case "stop_preview":
+      return stopPreview(sandbox);
     case "create_file":
       return {
         output: await createFile(
