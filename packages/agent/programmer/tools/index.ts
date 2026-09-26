@@ -6,6 +6,7 @@ import { createRunTool } from "./bash";
 import { createFileTool } from "./create-file";
 import { createEditTool } from "./edit";
 import { createMarkTaskCompleteTool } from "./mark-task-complete";
+import { createStartPreviewTool, createStopPreviewTool } from "./preview";
 
 export function createSandboxTools(deps: ProgrammerGraphDeps) {
   return {
@@ -15,6 +16,8 @@ export function createSandboxTools(deps: ProgrammerGraphDeps) {
     run: createRunTool(deps),
     createFile: createFileTool(deps),
     edit: createEditTool(deps),
+    startPreview: createStartPreviewTool(deps),
+    stopPreview: createStopPreviewTool(deps),
     markTaskComplete: createMarkTaskCompleteTool(),
   };
 }

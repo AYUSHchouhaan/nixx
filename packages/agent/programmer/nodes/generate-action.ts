@@ -16,6 +16,8 @@ export async function generateActionNode(
     tools.run,
     tools.createFile,
     tools.edit,
+    tools.startPreview,
+    tools.stopPreview,
     tools.markTaskComplete,
   ]);
 
