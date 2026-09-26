@@ -13,6 +13,29 @@ import {
 import { MessageView } from "./message-view";
 import styles from "./chat.module.css";
 
+const previewUrlPattern = /https:\/\/[^\s)]+/g;
+
+function contentText(content: unknown): string {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+  return content
+    .map((part) => {
+      if (!part || typeof part !== "object") return "";
+      const text = (part as Record<string, unknown>).text;
+      return typeof text === "string" ? text : "";
+    })
+    .join(" ");
+}
+
+function latestPreviewUrl(messages: MessageLike[]): string | null {
+  for (const message of [...messages].reverse()) {
+    const matches = contentText(message.content).match(previewUrlPattern);
+    const url = matches?.find((value) => value.includes("proxy.daytona.work"));
+    if (url) return url.replace(/[.,]+$/, "");
+  }
+  return null;
+}
+
 export function ChatClient({
   threadId,
   repoUrl,
@@ -29,6 +52,10 @@ export function ChatClient({
   const router = useRouter();
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewKey, setPreviewKey] = useState(0);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState(false);
   const [messages, setMessages] = useState<MessageLike[]>(initialMessages);
   const initialPromptConsumed = useRef(false);
   const reconnectAttempted = useRef(false);
@@ -135,6 +162,16 @@ export function ChatClient({
       ? stream.values.summary
       : null;
 
+  useEffect(() => {
+    const nextUrl = latestPreviewUrl(messages);
+    if (nextUrl && nextUrl !== previewUrl) {
+      setPreviewUrl(nextUrl);
+      setPreviewKey((key) => key + 1);
+      setPreviewLoading(true);
+      setPreviewError(false);
+    }
+  }, [messages, previewUrl]);
+
   return (
     <div className={styles.shell}>
       <header className={styles.nav}>
@@ -198,6 +235,62 @@ export function ChatClient({
             </p>
           ) : null}
         </div>
+
+        {previewUrl ? (
+          <section className={styles.previewPanel} aria-label="Live preview">
+            <div className={styles.previewHeader}>
+              <div className={styles.previewTitleGroup}>
+                <span className={styles.previewEyebrow}>Live preview</span>
+                <span className={styles.previewStatus}>
+                  {previewError ? "Needs attention" : previewLoading ? "Connecting" : "Running"}
+                </span>
+              </div>
+              <div className={styles.previewActions}>
+                <button
+                  type="button"
+                  className={styles.previewButton}
+                  onClick={() => {
+                    setPreviewKey((key) => key + 1);
+                    setPreviewLoading(true);
+                    setPreviewError(false);
+                  }}
+                >
+                  Refresh
+                </button>
+                <a
+                  className={styles.previewButton}
+                  href={previewUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open in new tab
+                </a>
+              </div>
+            </div>
+            <div className={styles.previewFrame}>
+              {previewError ? (
+                <div className={styles.previewEmpty}>
+                  <strong>The preview could not be embedded.</strong>
+                  <a href={previewUrl} target="_blank" rel="noreferrer">
+                    Open it in a new tab
+                  </a>
+                </div>
+              ) : (
+                <iframe
+                  key={previewKey}
+                  title="Application preview"
+                  src={previewUrl}
+                  className={styles.previewIframe}
+                  onLoad={() => setPreviewLoading(false)}
+                  onError={() => {
+                    setPreviewLoading(false);
+                    setPreviewError(true);
+                  }}
+                />
+              )}
+            </div>
+          </section>
+        ) : null}
 
         <div className={styles.composer}>
           <textarea
