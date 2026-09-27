@@ -38,6 +38,7 @@ const runSummarySchema = z.object({
 
 function buildConfig(input: AgentRunInput) {
   return {
+    recursion_limit: 50,
     configurable: {
       thread_id: input.threadId,
       sandbox_id: input.sandboxId,
