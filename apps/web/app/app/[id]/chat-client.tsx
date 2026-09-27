@@ -196,7 +196,10 @@ export function ChatClient({
         </div>
       </header>
 
-      <main className={styles.main}>
+      <main
+        className={styles.main}
+        data-preview={previewUrl ? "open" : "closed"}
+      >
         <div className={styles.scroll} ref={scrollRef}>
           {messages.length === 0 && !stream.isLoading && !summary ? (
             <p className={styles.empty}>
