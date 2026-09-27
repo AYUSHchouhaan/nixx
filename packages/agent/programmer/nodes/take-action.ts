@@ -17,7 +17,7 @@ export async function takeActionNode(
     read: tools.read,
     run: tools.run,
     create_file: tools.createFile,
-    edit_file: tools.edit,
+    edit: tools.edit,
     start_preview: tools.startPreview,
     stop_preview: tools.stopPreview,
     mark_task_complete: tools.markTaskComplete,
