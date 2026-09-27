@@ -21,6 +21,19 @@ The `sandbox-worker` app executes repository operations inside Daytona sandboxes
 - `src/preview.ts` — persistent preview sessions and signed preview URLs.
 - `src/run-command.ts` — finite shell command execution.
 - `src/read.ts`, `src/search.ts`, `src/create-file.ts`, `src/edit-file.ts`, `src/git.ts` — sandbox operations.
+- `sandbox/Dockerfile` — sandbox image definition, built into the `nixx-node` Daytona snapshot.
+- `scripts/build-snapshot.ts` — builds the `nixx-node` snapshot from `sandbox/Dockerfile`.
+- `scripts/test-sandbox.ts` — smoke test that creates a sandbox and verifies its environment.
+
+## Sandbox image
+
+Sandboxes run from the `nixx-node` snapshot, built from `sandbox/Dockerfile`: Node.js 22 on Debian bookworm with ripgrep, git, curl, python3 and a C toolchain for native module builds. The image runs as the `daytona` user with working directory `/home/daytona`, matching `SANDBOX_ROOT_DIR`, so repositories cloned by the worker are user-writable.
+
+Rebuild the snapshot after changing the Dockerfile:
+
+```bash
+bun run --filter sandbox-worker build:snapshot
+```
 
 ## Development
 
@@ -38,6 +51,7 @@ The worker has no HTTP server; it listens for BullMQ jobs.
 bun run --filter sandbox-worker dev
 bun run --filter sandbox-worker start
 bun run --filter sandbox-worker check-types
+bun run --filter sandbox-worker build:snapshot
 bun run --filter sandbox-worker test:sandbox
 ```
 
