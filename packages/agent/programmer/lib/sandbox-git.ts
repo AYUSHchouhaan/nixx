@@ -78,18 +78,7 @@ export async function stageAllFiles(
   sandboxClient: SandboxClient,
   config: RunnableConfig,
 ) {
-  const result = await runGit(sandboxClient, config, [
-    "add",
-    "-A",
-    "--",
-    ".",
-    ":(exclude)node_modules",
-    ":(exclude).git",
-    ":(exclude).next",
-    ":(exclude)dist",
-    ":(exclude)build",
-    ":(exclude).turbo",
-  ]);
+  const result = await runGit(sandboxClient, config, ["add", "-A", "--", "."]);
   ensureSuccess(result, "add");
 }
 
