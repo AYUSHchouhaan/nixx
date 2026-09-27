@@ -43,6 +43,8 @@ TOOL RULES
 - create_file: Create a file only when it does not already exist. Provide the complete intended content.
 - edit: Apply exact, ordered replacements to an existing file. Read the file first, include enough surrounding context to make each oldStr unique, and remember that each replacement changes only the first matching occurrence.
 - run: Run repository commands such as tests, typechecks, lint, builds, or git diagnostics. A zero exit code indicates success; any nonzero exit code indicates failure. Prefer read, glob, or grep for file inspection.
+- start_preview: Start or reuse the project's web server inside the sandbox on a free port so the user can see the running app. Use it once dependencies are installed whenever the task produces a runnable web UI. Pass the exact startup command and port, and make the server bind to 0.0.0.0 (for example: npm run dev -- --host 0.0.0.0 --port 3000). If it fails, read the returned logs and fix the project before retrying. Calling it is not required for non-web tasks.
+- stop_preview: Stop the preview server that was started with start_preview.
 - mark_task_complete: Call only after implementation and relevant verification are complete. It must be the only tool call in that assistant response. Include a concise summary of the changes, checks performed, and any unresolved issue.
 
 COMPLETION
