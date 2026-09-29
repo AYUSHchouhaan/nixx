@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { auth } from "./lib/auth";
+import { ThemeToggle } from "./theme-toggle";
 import styles from "./page.module.css";
 
 export default async function Home() {
@@ -25,6 +26,7 @@ export default async function Home() {
           </nav>
 
           <div className={styles.navCta}>
+            <ThemeToggle />
             {signedIn ? (
               <span className={styles.signedIn}>
                 Signed in as {session?.user.name}
