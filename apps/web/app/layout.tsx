@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { ThemeProvider } from "./theme-provider";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -23,16 +24,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <span
-          aria-hidden="true"
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
           dangerouslySetInnerHTML={{
             __html:
-              "<!-- impeccable-direction-contract 96b1eb7b\nTHESIS: A professional, minimalist AI dev-tool landing that proves the sandbox-to-PR mechanism in the first viewport, refusing the gradient-glow hype default.\nOWN-WORLD: Geist Sans + Geist Mono; monochrome surfaces (near-black ink on white/near-white ground) with one reserved GitHub-merge green used only for state; hairline borders, no gradients, no glass.\nSTORY: A developer sees, in seconds, that Nixx runs their task in an isolated sandbox and returns a reviewable pull request, then signs in with GitHub.\nFIRST VIEWPORT: Nav (wordmark, How it works, Sign in, Open app); left column headline/subhead/CTA, right column a terminal session running `nixx run` to an opened PR #42.\nFORM: the standard AI dev-tool landing (canon), executed at the craft level of Cursor, GitHub Copilot, and Devin.\nFINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance. -->",
+              '(function(){try{var t=localStorage.getItem("nixx-theme");if(t!=="light"&&t!=="dark"){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.setAttribute("data-theme",t);}catch(e){document.documentElement.setAttribute("data-theme","light");}})();',
           }}
         />
-        {children}
+      </head>
+      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+        <ThemeProvider>
+          <span
+            aria-hidden="true"
+            dangerouslySetInnerHTML={{
+              __html:
+                "<!-- impeccable-direction-contract 96b1eb7b\nTHESIS: A professional, minimalist AI dev-tool landing that proves the sandbox-to-PR mechanism in the first viewport, refusing the gradient-glow hype default.\nOWN-WORLD: Geist Sans + Geist Mono; monochrome surfaces (near-black ink on white/near-white ground) with one reserved GitHub-merge green used only for state; hairline borders, no gradients, no glass.\nSTORY: A developer sees, in seconds, that Nixx runs their task in an isolated sandbox and returns a reviewable pull request, then signs in with GitHub.\nFIRST VIEWPORT: Nav (wordmark, How it works, Sign in, Open app); left column headline/subhead/CTA, right column a terminal session running `nixx run` to an opened PR #42.\nFORM: the standard AI dev-tool landing (canon), executed at the craft level of Cursor, GitHub Copilot, and Devin.\nFINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance. -->",
+            }}
+          />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
