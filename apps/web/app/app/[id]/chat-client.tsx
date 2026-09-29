@@ -11,6 +11,7 @@ import {
   type MessageLike,
 } from "../../lib/agent-types";
 import { MessageView } from "./message-view";
+import { ThemeToggle } from "../../theme-toggle";
 import styles from "./chat.module.css";
 
 const previewUrlPattern = /https:\/\/[^\s)]+/g;
@@ -193,6 +194,7 @@ export function ChatClient({
               </>
             ) : null}
           </div>
+          <ThemeToggle />
         </div>
       </header>
 
