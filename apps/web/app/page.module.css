@@ -2,8 +2,9 @@
   min-height: 100svh;
   background: var(--bg);
   color: var(--ink);
-  color-scheme: dark;
+}
 
+[data-theme="dark"] .page {
   --bg: #1b1b1d;
   --bg-subtle: #202022;
   --surface: #242526;
