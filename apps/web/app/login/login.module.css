@@ -7,6 +7,12 @@
   position: relative;
 }
 
+.themeWrap {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+}
+
 .back {
   position: absolute;
   top: 24px;
