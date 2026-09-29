@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LoginForm } from "./login-form";
+import { ThemeToggle } from "../theme-toggle";
 import styles from "./login.module.css";
 
 export const metadata: Metadata = {
@@ -10,6 +11,9 @@ export const metadata: Metadata = {
 export default function LoginPage() {
   return (
     <main className={styles.wrap}>
+      <div className={styles.themeWrap}>
+        <ThemeToggle />
+      </div>
       <Link href="/" className={styles.back}>
         <svg
           aria-hidden="true"
