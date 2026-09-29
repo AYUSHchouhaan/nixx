@@ -5,8 +5,9 @@
   overflow: hidden;
   background: var(--bg);
   color: var(--ink);
-  color-scheme: dark;
+}
 
+[data-theme="dark"] .shell {
   --bg: #1b1b1d;
   --bg-subtle: #202022;
   --surface: #242526;
