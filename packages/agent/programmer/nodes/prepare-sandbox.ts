@@ -35,7 +35,7 @@ export async function prepareSandboxNode(
       messages: [
         new AIMessage({
           name: "environment-status",
-          content: "Environment ready\nCreating sandbox\nCloning repository",
+          content: "Environment ready\nCreated sandbox\nCloned repository",
         }),
       ],
     };
