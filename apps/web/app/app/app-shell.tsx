@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createAuthClient } from "better-auth/client";
+import { ThemeToggle } from "../theme-toggle";
 import styles from "./app.module.css";
 
 const authClient = createAuthClient();
@@ -187,6 +188,7 @@ export function AppShell({
             <span className={styles.status}><i aria-hidden="true" /> Agent ready</span>
           </nav>
           <div className={styles.navCta}>
+            <ThemeToggle />
             <button
               type="button"
               className={styles.signOut}
