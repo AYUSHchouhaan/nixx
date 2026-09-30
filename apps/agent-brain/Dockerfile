@@ -22,7 +22,8 @@ RUN bun install --frozen-lockfile
 FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 COPY --from=installer /app ./
+COPY --from=pruner /app/out/full/ ./
 WORKDIR /app/apps/agent-brain
 ENV NODE_ENV=production
 EXPOSE 4000
-CMD ["sh", "-c", "exec node /app/node_modules/.bin/langgraphjs dev --config langgraph.json --port ${PORT:-4000} --host 0.0.0.0 --no-browser"]
+CMD ["sh", "-c", "exec node /app/apps/agent-brain/node_modules/.bin/langgraphjs dev --config langgraph.json --port ${PORT:-4000} --host 0.0.0.0 --no-browser"]
