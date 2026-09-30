@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nixx Docker Compose deployment</title>
+  <style>
+    :root { color-scheme: dark; --bg: #0b1020; --panel: #121a2d; --text: #e8edf7; --muted: #aab5cc; --line: #293650; --accent: #83d6ff; }
+    body { max-width: 980px; margin: 0 auto; padding: 40px 24px; background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, sans-serif; }
+    h1, h2 { line-height: 1.2; } h1 { color: var(--accent); } h2 { margin-top: 36px; }
+    code, pre { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+    code { padding: 2px 6px; } pre { padding: 16px; overflow-x: auto; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; background: var(--panel); } th, td { border: 1px solid var(--line); padding: 10px; text-align: left; } th { color: var(--accent); }
+    li { margin: 6px 0; } strong { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <h1>Nixx Docker Compose deployment</h1>
+  <p>Nixx runs four services: web, Agent Brain, the Daytona sandbox worker, and Redis for BullMQ queues.</p>
+  <table><thead><tr><th>Service</th><th>Host port</th><th>Purpose</th></tr></thead><tbody>
+    <tr><td>web</td><td>3000</td><td>Next.js UI and API routes</td></tr>
+    <tr><td>agent-brain</td><td>4000</td><td>LangGraph coding graph</td></tr>
+    <tr><td>sandbox-worker</td><td>none</td><td>BullMQ worker for Daytona operations</td></tr>
+    <tr><td>redis</td><td>6379</td><td>Queue broker</td></tr>
+  </tbody></table>
+  <h2>Start</h2>
+  <pre><code>docker compose up --build -d
+docker compose logs -f web agent-brain sandbox-worker</code></pre>
+  <p>Open <code>http://localhost:3000</code>. Stop with <code>docker compose down</code>. Redis data is stored in the <code>redis-data</code> volume.</p>
+  <h2>Build notes</h2>
+  <ul>
+    <li>The web image installs with Bun but runs <code>next build</code> on Node — Next.js 16's production build fails under Bun's CommonJS wrapper.</li>
+    <li>Bun installs workspace dependencies inside each app's own <code>node_modules</code>, not the repo root, so start commands must use workspace paths.</li>
+    <li>The Agent Brain image also copies pruned source, since the LangGraph CLI needs <code>langgraph.json</code> and <code>src/graph.ts</code>.</li>
+  </ul>
+  <h2>Configuration</h2>
+  <ul>
+    <li><strong>Web:</strong> database, Better Auth, GitHub OAuth/App credentials, and <code>BETTER_AUTH_URL=http://localhost:3000</code>.</li>
+    <li><strong>Agent Brain:</strong> <code>DATABASE_URL</code> and <code>OPENAI_API_KEY</code>.</li>
+    <li><strong>Sandbox worker:</strong> <code>DAYTONA_API_KEY</code>, with optional Daytona URL and target.</li>
+    <li>Compose sets Redis to <code>redis:6379</code> and Brain to <code>http://agent-brain:4000</code>. Do not use <code>localhost</code> between containers.</li>
+  </ul>
+  <h2>OAuth and CORS</h2>
+  <p>Set the GitHub callback to <code>http://localhost:3000/api/auth/callback/github</code>. Normal browser traffic does not need CORS because the browser only calls web; web calls Agent Brain privately. If Brain is exposed directly later, allow only the exact frontend origin and avoid <code>*</code> with credentials.</p>
+  <h2>Secrets</h2>
+  <p>Keep environment files outside Git. Rotate any database, GitHub OAuth, GitHub App private-key, OpenAI, or Better Auth credentials that have appeared in shared output. The GitHub private key must remain valid PEM.</p>
+</body>
+</html>
