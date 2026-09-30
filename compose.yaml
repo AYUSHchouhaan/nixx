@@ -1,0 +1,70 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: nixx-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  agent-brain:
+    build:
+      context: .
+      dockerfile: apps/agent-brain/Dockerfile
+    container_name: nixx-agent-brain
+    restart: unless-stopped
+    env_file:
+      - ./apps/agent-brain/.env
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      PORT: "4000"
+    ports:
+      - "4000:4000"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  sandbox-worker:
+    build:
+      context: .
+      dockerfile: apps/sandbox-worker/Dockerfile
+    container_name: nixx-sandbox-worker
+    restart: unless-stopped
+    env_file:
+      - ./apps/sandbox-worker/.env
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    depends_on:
+      redis:
+        condition: service_healthy
+      agent-brain:
+        condition: service_started
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: nixx-web
+    restart: unless-stopped
+    env_file:
+      - ./apps/web/.env
+    environment:
+      AGENT_BRAIN_URL: http://agent-brain:4000
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      agent-brain:
+        condition: service_started
+
+volumes:
+  redis-data:
