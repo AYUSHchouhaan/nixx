@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useStream, FetchStreamTransport } from "@langchain/langgraph-sdk/react";
-import Markdown from "react-markdown";
 import {
   type AgentInput,
   type ChatState,
@@ -158,11 +157,6 @@ export function ChatClient({
     }
   }, [stream.messages]);
 
-  const summary =
-    typeof stream.values?.summary === "string" && stream.values.summary
-      ? stream.values.summary
-      : null;
-
   useEffect(() => {
     const nextUrl = latestPreviewUrl(messages);
     if (nextUrl && nextUrl !== previewUrl) {
@@ -203,7 +197,7 @@ export function ChatClient({
         data-preview={previewUrl ? "open" : "closed"}
       >
         <div className={styles.scroll} ref={scrollRef}>
-          {messages.length === 0 && !stream.isLoading && !summary ? (
+          {messages.length === 0 && !stream.isLoading ? (
             <p className={styles.empty}>
               Describe your task below to start the agent.
             </p>
@@ -216,15 +210,6 @@ export function ChatClient({
                   messages={messages}
                 />
               ))}
-              {summary && !stream.isLoading ? (
-                <div className={styles.aiRow}>
-                  <div className={styles.aiBubble}>
-                    <div className={styles.summaryMarkdown}>
-                      <Markdown>{summary}</Markdown>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
               {stream.isLoading ? (
                 <div className={styles.thinking}>
                   <span className={styles.thinkingDot} aria-hidden="true" />
