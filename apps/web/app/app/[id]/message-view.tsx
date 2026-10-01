@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Markdown from "react-markdown";
 import { type MessageLike, type ToolCallLike } from "../../lib/agent-types";
 import styles from "./chat.module.css";
 
@@ -468,7 +469,11 @@ export function MessageView({
   return (
     <div className={styles.aiRow}>
       <div className={styles.aiBubble}>
-        {reasoningText ? <p className={styles.text}>{reasoningText}</p> : null}
+        {reasoningText ? (
+          <div className={styles.summaryMarkdown}>
+            <Markdown>{reasoningText}</Markdown>
+          </div>
+        ) : null}
       </div>
     </div>
   );
