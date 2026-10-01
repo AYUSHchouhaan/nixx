@@ -37,5 +37,7 @@ export async function endConclusionNode(
       ? response.content
       : JSON.stringify(response.content);
 
-  return { summary };
+  response.content = summary;
+
+  return { summary, messages: [response] };
 }
