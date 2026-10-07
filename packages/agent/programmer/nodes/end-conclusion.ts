@@ -1,4 +1,9 @@
-import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import {
+  AIMessage,
+  HumanMessage,
+  SystemMessage,
+  ToolMessage,
+} from "@langchain/core/messages";
 import type { ProgrammerState } from "../types";
 import { createChatModel } from "../model";
 
@@ -10,12 +15,13 @@ export async function endConclusionNode(
   const sessionSummary = state.messages
     .slice(-40)
     .map((m) => {
-      const type = m.getType();
       const content =
         typeof m.content === "string" ? m.content : JSON.stringify(m.content);
-      if (type === "ai") return `[Assistant]: ${content.slice(0, 500)}`;
-      if (type === "tool") return `[Tool Result]: ${content.slice(0, 300)}`;
-      if (type === "human") return `[User]: ${content.slice(0, 300)}`;
+      if (AIMessage.isInstance(m))
+        return `[Assistant]: ${content.slice(0, 500)}`;
+      if (ToolMessage.isInstance(m))
+        return `[Tool Result]: ${content.slice(0, 300)}`;
+      if (HumanMessage.isInstance(m)) return `[User]: ${content.slice(0, 300)}`;
       return null;
     })
     .filter(Boolean)
