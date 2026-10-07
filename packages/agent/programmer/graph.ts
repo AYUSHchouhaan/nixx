@@ -1,8 +1,9 @@
 import { END, START, StateGraph } from "@langchain/langgraph";
-import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { ProgrammerStateAnnotation } from "./types";
 import type { ProgrammerState, ProgrammerGraphDeps } from "./types";
 import { buildSystemPrompt } from "./lib/system-prompt";
+import { lastAIMessage } from "./lib/messages";
 import {
   generateActionNode,
   takeActionNode,
@@ -33,9 +34,7 @@ function routeAfterSandbox(state: ProgrammerState): string {
 }
 
 function routeAfterGenerateAction(state: ProgrammerState): string {
-  const lastAI = [...state.messages]
-    .reverse()
-    .find((m) => m.getType() === "ai") as AIMessage | undefined;
+  const lastAI = lastAIMessage(state.messages);
 
   if (lastAI?.tool_calls?.length) {
     return "take-action";
@@ -45,9 +44,7 @@ function routeAfterGenerateAction(state: ProgrammerState): string {
 }
 
 function routeAfterTakeAction(state: ProgrammerState): string {
-  const lastAI = [...state.messages]
-    .reverse()
-    .find((m) => m.getType() === "ai") as AIMessage | undefined;
+  const lastAI = lastAIMessage(state.messages);
 
   if (lastAI?.tool_calls?.some((tc) => tc.name === "mark_task_complete")) {
     return "end-conclusion";
