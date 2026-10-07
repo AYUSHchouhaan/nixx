@@ -1,7 +1,8 @@
-import { ToolMessage, AIMessage } from "@langchain/core/messages";
+import { ToolMessage } from "@langchain/core/messages";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import { createSandboxTools } from "../tools";
 import type { ProgrammerState, ProgrammerGraphDeps } from "../types";
+import { lastAIMessage } from "../lib/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 
 export async function takeActionNode(
@@ -23,9 +24,7 @@ export async function takeActionNode(
     mark_task_complete: tools.markTaskComplete,
   };
 
-  const lastAI = [...state.internalMessages]
-    .reverse()
-    .find((m) => m.getType() === "ai") as AIMessage | undefined;
+  const lastAI = lastAIMessage(state.internalMessages);
 
   const toolCalls = lastAI?.tool_calls ?? [];
   if (!toolCalls.length) {
