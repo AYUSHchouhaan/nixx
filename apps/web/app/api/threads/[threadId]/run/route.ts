@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "../../../../lib/auth";
 import { headers } from "next/headers";
 import { db } from "@repo/db";
@@ -7,6 +8,12 @@ import { eq } from "drizzle-orm";
 import { runAgent } from "../../../../lib/agent-brain";
 import { createInstallationToken } from "../../../../lib/github-installation";
 import { getGitHubInstallationId } from "../../../../lib/auth";
+
+const runThreadBodySchema = z.object({
+  query: z.string().min(1),
+  repoUrl: z.string().min(1),
+  branch: z.string().optional(),
+});
 
 export async function POST(
   request: Request,
@@ -21,18 +28,15 @@ export async function POST(
   }
 
   const { threadId } = await params;
-  const body = (await request.json()) as {
-    query: string;
-    repoUrl?: string;
-    branch?: string;
-  };
 
-  if (!body.query) {
-    return NextResponse.json({ error: "query is required" }, { status: 400 });
-  }
-
-  if (!body.repoUrl) {
-    return NextResponse.json({ error: "repoUrl is required" }, { status: 400 });
+  let body: z.infer<typeof runThreadBodySchema>;
+  try {
+    body = runThreadBodySchema.parse(await request.json());
+  } catch {
+    return NextResponse.json(
+      { error: "query and repoUrl are required" },
+      { status: 400 },
+    );
   }
 
   const [thread] = await db
