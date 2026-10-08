@@ -7,7 +7,8 @@
     ".": "./index.ts"
   },
   "scripts": {
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "bun test"
   },
   "dependencies": {
     "@langchain/core": "^1.2.8",
