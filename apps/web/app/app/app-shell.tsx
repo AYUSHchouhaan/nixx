@@ -248,12 +248,17 @@ export function AppShell({
                   onClick={() => void handleSubmit()}
                   disabled={!prompt.trim() || !selectedRepo || !selectedBranch || loading}
                   aria-label="Run task"
+                  aria-busy={loading}
                   title="Run task"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M12 19V5" />
-                    <path d="M6 11l6-6 6 6" />
-                  </svg>
+                  {loading ? (
+                    <span className={styles.spinner} aria-hidden="true" />
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M12 19V5" />
+                      <path d="M6 11l6-6 6 6" />
+                    </svg>
+                  )}
                 </button>
               </div>
             </div>
