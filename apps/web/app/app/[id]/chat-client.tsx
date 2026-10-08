@@ -202,7 +202,7 @@ export function ChatClient({
               Describe your task below to start the agent.
             </p>
           ) : (
-            <div className={styles.messages}>
+            <div className={styles.messages} role="log" aria-live="polite">
               {messages.map((message, index) => (
                 <MessageView
                   key={message.id ?? index}
@@ -288,6 +288,7 @@ export function ChatClient({
             placeholder="Describe your task…"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
+            aria-busy={stream.isLoading}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault();
