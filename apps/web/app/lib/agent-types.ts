@@ -28,8 +28,6 @@ export const chatMessageSchema = z.object({
   status: z.enum(["success", "error"]).optional(),
 });
 
-export const chatMessageArraySchema = z.array(chatMessageSchema);
-
 export type MessageType = z.infer<typeof messageTypeSchema>;
 export type MessageContentPart = z.infer<typeof messageContentPartSchema>;
 export type MessageContent = z.infer<typeof messageContentSchema>;
