@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nixx API reference</title>
+  <style>
+    :root { color-scheme: dark; --bg: #0b1020; --panel: #121a2d; --text: #e8edf7; --muted: #aab5cc; --line: #293650; --accent: #83d6ff; }
+    body { max-width: 980px; margin: 0 auto; padding: 40px 24px; background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, sans-serif; }
+    h1, h2 { line-height: 1.2; } h1 { color: var(--accent); } h2 { margin-top: 36px; }
+    code, pre { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+    code { padding: 2px 6px; } pre { padding: 16px; overflow-x: auto; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; background: var(--panel); } th, td { border: 1px solid var(--line); padding: 10px; text-align: left; } th { color: var(--accent); }
+    li { margin: 6px 0; } strong { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <h1>Nixx API reference</h1>
+  <p>The web app exposes a JSON API under <code>/api</code> plus an SSE endpoint for streaming agent output. Every endpoint except the Better Auth handler requires an authenticated session; unauthenticated requests return <code>401</code>.</p>
+
+  <h2>Authentication</h2>
+  <p>Better Auth mounts its handler at <code>/api/auth/[...all]</code>. Sign in through GitHub OAuth at <code>/login</code>. Success writes two HttpOnly cookies: <code>GITHUB_ACCESS_TOKEN_COOKIE</code> and <code>GITHUB_INSTALLATION_ID_COOKIE</code>. API routes read them to mint short-lived installation tokens.</p>
+
+  <h2>Threads</h2>
+
+  <h3>POST /api/threads</h3>
+  <p>Creates a thread and its LangGraph thread.</p>
+  <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+    <tr><td>sandboxId</td><td>string</td><td>no</td><td>Daytona sandbox id; defaults to the thread id</td></tr>
+    <tr><td>repoUrl</td><td>string</td><td>no</td><td>Repository URL stored in metadata</td></tr>
+    <tr><td>branch</td><td>string</td><td>no</td><td>Branch stored in metadata</td></tr>
+    <tr><td>title</td><td>string</td><td>no</td><td>Display title stored in metadata</td></tr>
+  </tbody></table>
+  <p>Response: <code>{ "id": "..." }</code></p>
+
+  <h3>GET /api/threads/[threadId]</h3>
+  <p>Returns the thread plus its agent messages. Only the owning user can read it. Returns <code>404</code> for missing or foreign threads.</p>
+  <pre><code>{ "thread": { "id": "...", "sandboxId": "...", "metadata": {}, "createdAt": "...", "updatedAt": "..." }, "messages": [] }</code></pre>
+
+  <h3>POST /api/threads/[threadId]/run</h3>
+  <p>Starts an agent run and blocks until it finishes.</p>
+  <table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody>
+    <tr><td>query</td><td>string</td><td>yes</td><td>Task description</td></tr>
+    <tr><td>repoUrl</td><td>string</td><td>yes</td><td>Repository to operate on</td></tr>
+    <tr><td>branch</td><td>string</td><td>no</td><td>Base branch</td></tr>
+  </tbody></table>
+  <p>Response: <code>{ "summary": "..." }</code></p>
+
+  <h3>POST /api/threads/[threadId]/stream</h3>
+  <p>Streams agent events as SSE. With a <code>query</code> it starts a new run; without one it reconnects to the active run. Emits <code>values</code>, <code>messages</code>, and <code>messages-tuple</code> events. Invalid bodies return <code>400</code>.</p>
+
+  <h3>POST /api/threads/[threadId]/run/cancel</h3>
+  <p>Interrupts the running agent run. Response: <code>{ "ok": true }</code></p>
+
+  <h2>GitHub</h2>
+  <h3>GET /api/github/repositories</h3>
+  <p>Lists repositories accessible to the installation. Response: <code>{ "repositories": [...] }</code></p>
+
+  <h3>GET /api/github/branches?owner=&lt;owner&gt;&amp;repo=&lt;repo&gt;</h3>
+  <p>Lists branches. Missing <code>owner</code> or <code>repo</code> returns <code>400</code>. Response: <code>{ "branches": [...] }</code></p>
+
+  <h3>GET /api/github/installation-token</h3>
+  <p>Mints an installation token. Response: <code>{ "installationId": 0, "token": "...", "expiresAt": "..." }</code></p>
+
+  <h2>Error shape</h2>
+  <p>Errors are JSON with an <code>error</code> field. Common messages are <code>Unauthorized</code>, <code>Thread not found</code>, and <code>GitHub installation ID missing</code>.</p>
+</body>
+</html>
