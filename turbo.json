@@ -27,6 +27,13 @@
     "DATABASE_URL",
     "BETTER_AUTH_SECRET",
     "BETTER_AUTH_URL",
-    "NODE_ENV"
+    "NODE_ENV",
+    "OPENAI_API_KEY",
+    "OPENAI_MODEL",
+    "REDIS_HOST",
+    "REDIS_PORT",
+    "DAYTONA_API_KEY",
+    "DAYTONA_API_URL",
+    "DAYTONA_TARGET"
   ]
 }
