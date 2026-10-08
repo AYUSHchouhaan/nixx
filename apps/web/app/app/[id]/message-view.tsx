@@ -331,6 +331,7 @@ function ActionItem({ action }: { action: ActionItemProps }) {
             className={styles.chevronBtn}
             onClick={() => setExpanded(!expanded)}
             aria-label={expanded ? "Collapse output" : "Expand output"}
+            aria-expanded={expanded}
           >
             {expanded ? "▴" : "▾"}
           </button>
@@ -358,6 +359,7 @@ function ActionStep({
             type="button"
             className={styles.reasoningToggle}
             onClick={() => setShowReasoning(!showReasoning)}
+            aria-expanded={showReasoning}
           >
             <span
               className={
