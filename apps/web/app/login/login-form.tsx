@@ -45,6 +45,7 @@ export function LoginForm() {
         type="button"
         onClick={signIn}
         disabled={loading}
+        aria-busy={loading}
         className={styles.githubButton}
       >
         <GitHubIcon />
