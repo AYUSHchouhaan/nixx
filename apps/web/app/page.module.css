@@ -175,6 +175,10 @@
   border-color: var(--ink);
 }
 
+.buttonGhost:active {
+  transform: translateY(1px);
+}
+
 /* ---------- Hero ---------- */
 
 .hero {
@@ -459,6 +463,14 @@
 .step {
   display: flex;
   gap: 18px;
+  padding: 8px;
+  margin: -8px;
+  border-radius: 12px;
+  transition: background-color 160ms ease;
+}
+
+.step:hover {
+  background: var(--bg-subtle);
 }
 
 .stepNum {
@@ -510,11 +522,14 @@
 .feature {
   border-top: 1px solid var(--border-strong);
   padding-top: 24px;
-  transition: border-color 140ms ease;
+  transition:
+    border-color 140ms ease,
+    transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .feature:hover {
   border-color: var(--accent);
+  transform: translateY(-3px);
 }
 
 .featureTitle {
